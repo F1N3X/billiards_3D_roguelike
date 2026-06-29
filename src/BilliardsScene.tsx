@@ -2,38 +2,53 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
-const BALL_RADIUS = 0.15
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const BALL_RADIUS = 0.075
 const TABLE_WIDTH = 4.5
 const TABLE_LENGTH = 2.5
 const TABLE_HEIGHT = 0.1
 const FELT_COLOR = 0x2d7a2d
 const WOOD_COLOR = 0x8B4513
 const CUE_COLOR = 0xd4a017
-const POCKET_RADIUS = 0.19
+const POCKET_RADIUS = 0.13
+
+const CUE_LENGTH = 2.5
+const CUE_TIP_GAP = 0.05
+const SHOT_POWER = 6.0
+const FRICTION = 0.984
+const MIN_SPEED = 0.003
+const AIM_SPEED = 2.2
 
 const ROOM_W = 16
 const ROOM_D = 12
 const ROOM_H = 5.5
 const FLOOR_Y = -0.86
 
-const BALL_COLORS = [
-  0xf5f5f5, // cue ball
-  0xf5e400, // 1 - yellow
-  0x1a1acc, // 2 - blue
-  0xdd1111, // 3 - red
-  0x7700cc, // 4 - purple
-  0xff6600, // 5 - orange
-  0x006600, // 6 - green
-  0x800000, // 7 - maroon
-  0x111111, // 8 - black
-  0xf5e400, // 9 - yellow stripe
-  0x1a1acc, // 10 - blue stripe
-  0xdd1111, // 11 - red stripe
-  0x7700cc, // 12 - purple stripe
-  0xff6600, // 13 - orange stripe
-  0x006600, // 14 - green stripe
-  0x800000, // 15 - maroon stripe
+const POCKET_INSET = POCKET_RADIUS * 0.55
+const POCKET_XZ: [number, number][] = [
+  [-(TABLE_WIDTH / 2 - POCKET_INSET), -(TABLE_LENGTH / 2 - POCKET_INSET)],
+  [ TABLE_WIDTH / 2 - POCKET_INSET,  -(TABLE_LENGTH / 2 - POCKET_INSET)],
+  [-(TABLE_WIDTH / 2 - POCKET_INSET),  TABLE_LENGTH / 2 - POCKET_INSET],
+  [ TABLE_WIDTH / 2 - POCKET_INSET,   TABLE_LENGTH / 2 - POCKET_INSET],
+  [0, -(TABLE_LENGTH / 2 - POCKET_INSET)],
+  [0,  TABLE_LENGTH / 2 - POCKET_INSET],
 ]
+
+const BALL_COLORS = [
+  0xf5f5f5,
+  0xf5e400, 0x1a1acc, 0xdd1111, 0x7700cc, 0xff6600, 0x006600, 0x800000, 0x111111,
+  0xf5e400, 0x1a1acc, 0xdd1111, 0x7700cc, 0xff6600, 0x006600, 0x800000,
+]
+
+// ─── Ball state ───────────────────────────────────────────────────────────────
+
+interface BallState {
+  mesh: THREE.Mesh
+  vx: number
+  vz: number
+  active: boolean
+}
 
 // ─── Ball textures ────────────────────────────────────────────────────────────
 
@@ -100,8 +115,6 @@ function makeFloorTexture(): THREE.CanvasTexture {
   for (let i = 0; i < nPlanks; i++) {
     ctx.fillStyle = colors[i % colors.length]
     ctx.fillRect(i * pw + 1, 0, pw - 2, S)
-
-    // Wood grain lines
     ctx.strokeStyle = 'rgba(0,0,0,0.10)'
     ctx.lineWidth = 1
     for (let g = 1; g <= 4; g++) {
@@ -113,7 +126,6 @@ function makeFloorTexture(): THREE.CanvasTexture {
     }
   }
 
-  // Subtle varnish sheen
   const grad = ctx.createLinearGradient(0, 0, 0, S)
   grad.addColorStop(0, 'rgba(200,120,40,0.07)')
   grad.addColorStop(1, 'rgba(0,0,0,0.09)')
@@ -135,12 +147,10 @@ function makeWallTexture(): THREE.CanvasTexture {
   canvas.height = S
   const ctx = canvas.getContext('2d')!
 
-  // ── Wallpaper zone (top 62%) ──
   const splitY = Math.round(S * 0.62)
   ctx.fillStyle = '#1c3a22'
   ctx.fillRect(0, 0, S, splitY)
 
-  // Diamond damask pattern
   ctx.strokeStyle = 'rgba(255,255,255,0.055)'
   ctx.lineWidth = 1
   const dW = 60, dH = 44
@@ -159,7 +169,6 @@ function makeWallTexture(): THREE.CanvasTexture {
     }
   }
 
-  // ── Chair rail ──
   ctx.fillStyle = '#7a4020'
   ctx.fillRect(0, splitY - 10, S, 20)
   ctx.fillStyle = '#9a5830'
@@ -167,12 +176,10 @@ function makeWallTexture(): THREE.CanvasTexture {
   ctx.fillStyle = '#5a2c10'
   ctx.fillRect(0, splitY + 6, S, 4)
 
-  // ── Wainscoting (lower 38%) ──
   const wainsY = splitY + 10
   ctx.fillStyle = '#2e1208'
   ctx.fillRect(0, wainsY, S, S - wainsY)
 
-  // Panel grooves
   const nPanels = 3
   const panelW = S / nPanels
   for (let p = 0; p < nPanels; p++) {
@@ -186,7 +193,6 @@ function makeWallTexture(): THREE.CanvasTexture {
     ctx.strokeRect(px + m + 5, wainsY + m + 5, panelW - m * 2 - 10, S - wainsY - m * 2 - 10)
   }
 
-  // ── Baseboard ──
   ctx.fillStyle = '#4a2210'
   ctx.fillRect(0, S - 18, S, 18)
   ctx.fillStyle = '#7a3a18'
@@ -205,7 +211,6 @@ function createRoom(scene: THREE.Scene) {
   const floorTex = makeFloorTexture()
   const wallTex = makeWallTexture()
 
-  // Floor
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(ROOM_W, ROOM_D),
     new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.75, metalness: 0.02 }),
@@ -215,7 +220,6 @@ function createRoom(scene: THREE.Scene) {
   floor.receiveShadow = true
   scene.add(floor)
 
-  // Ceiling — dark, no texture
   const ceiling = new THREE.Mesh(
     new THREE.PlaneGeometry(ROOM_W, ROOM_D),
     new THREE.MeshStandardMaterial({ color: 0x110c08, roughness: 1, metalness: 0 }),
@@ -224,7 +228,6 @@ function createRoom(scene: THREE.Scene) {
   ceiling.position.y = FLOOR_Y + ROOM_H
   scene.add(ceiling)
 
-  // Helper: a wall plane facing inward
   const addWall = (w: number, h: number, x: number, z: number, rotY: number) => {
     const t = wallTex.clone()
     t.needsUpdate = true
@@ -239,11 +242,10 @@ function createRoom(scene: THREE.Scene) {
     scene.add(mesh)
   }
 
-  // rotY values chosen so the plane's +Z normal faces room center
-  addWall(ROOM_W, ROOM_H,  0,            -ROOM_D / 2,  0)            // back  (+z facing)
-  addWall(ROOM_W, ROOM_H,  0,             ROOM_D / 2,  Math.PI)      // front (-z facing)
-  addWall(ROOM_D, ROOM_H, -ROOM_W / 2,   0,           -Math.PI / 2)  // left  (+x facing)
-  addWall(ROOM_D, ROOM_H,  ROOM_W / 2,   0,            Math.PI / 2)  // right (-x facing)
+  addWall(ROOM_W, ROOM_H,  0,            -ROOM_D / 2,  0)
+  addWall(ROOM_W, ROOM_H,  0,             ROOM_D / 2,  Math.PI)
+  addWall(ROOM_D, ROOM_H, -ROOM_W / 2,   0,           -Math.PI / 2)
+  addWall(ROOM_D, ROOM_H,  ROOM_W / 2,   0,            Math.PI / 2)
 }
 
 // ─── Table ────────────────────────────────────────────────────────────────────
@@ -254,7 +256,6 @@ function createTable(scene: THREE.Scene) {
   felt.receiveShadow = true
   scene.add(felt)
 
-  // Pocket holes — 4 corners + 2 side pockets
   const pocketMat = new THREE.MeshStandardMaterial({ color: 0x060606, roughness: 1, metalness: 0 })
   const inset = POCKET_RADIUS * 0.55
   const pocketPositions: [number, number][] = [
@@ -321,13 +322,13 @@ function createTable(scene: THREE.Scene) {
 
 // ─── Balls ────────────────────────────────────────────────────────────────────
 
-function createBalls(scene: THREE.Scene): THREE.Mesh[] {
-  const balls: THREE.Mesh[] = []
+function createBalls(scene: THREE.Scene): BallState[] {
+  const states: BallState[] = []
   const geo = new THREE.SphereGeometry(BALL_RADIUS, 32, 32)
 
-  const startX = 1.0
-  const positions: [number, number][] = []
+  const startX = TABLE_WIDTH / 4
   const spacing = BALL_RADIUS * 2.05
+  const positions: [number, number][] = []
   for (let row = 0; row < 5; row++) {
     for (let col = 0; col <= row; col++) {
       positions.push([
@@ -343,31 +344,30 @@ function createBalls(scene: THREE.Scene): THREE.Mesh[] {
       roughness: 0.2,
       metalness: 0.05,
     })
-    const ball = new THREE.Mesh(geo, mat)
-    ball.position.set(pos[0], TABLE_HEIGHT / 2 + BALL_RADIUS, pos[1])
-    ball.castShadow = true
-    scene.add(ball)
-    balls.push(ball)
+    const mesh = new THREE.Mesh(geo, mat)
+    mesh.position.set(pos[0], TABLE_HEIGHT / 2 + BALL_RADIUS, pos[1])
+    mesh.castShadow = true
+    scene.add(mesh)
+    states.push({ mesh, vx: 0, vz: 0, active: true })
   })
 
-  // Cue ball — plain white
-  const cueBall = new THREE.Mesh(
+  const cueMesh = new THREE.Mesh(
     geo,
     new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.15, metalness: 0.05 }),
   )
-  cueBall.position.set(-1.2, TABLE_HEIGHT / 2 + BALL_RADIUS, 0)
-  cueBall.castShadow = true
-  scene.add(cueBall)
-  balls.unshift(cueBall)
+  cueMesh.position.set(-TABLE_WIDTH / 4, TABLE_HEIGHT / 2 + BALL_RADIUS, 0)
+  cueMesh.castShadow = true
+  scene.add(cueMesh)
+  states.unshift({ mesh: cueMesh, vx: 0, vz: 0, active: true })
 
-  return balls
+  return states
 }
 
 // ─── Cue ─────────────────────────────────────────────────────────────────────
 
 function createCue(scene: THREE.Scene): THREE.Mesh {
   const cue = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.015, 0.03, 2.5, 16),
+    new THREE.CylinderGeometry(0.015, 0.03, CUE_LENGTH, 16),
     new THREE.MeshStandardMaterial({ color: CUE_COLOR, roughness: 0.4, metalness: 0.1 }),
   )
   cue.castShadow = true
@@ -413,6 +413,100 @@ function createPendantLamps(scene: THREE.Scene) {
   })
 }
 
+// ─── Physics ──────────────────────────────────────────────────────────────────
+
+function stepPhysics(balls: BallState[], dt: number) {
+  const friction = Math.pow(FRICTION, dt * 60)
+  const maxX = TABLE_WIDTH / 2 - BALL_RADIUS
+  const maxZ = TABLE_LENGTH / 2 - BALL_RADIUS
+  const diam = BALL_RADIUS * 2
+
+  // Move + friction
+  for (const b of balls) {
+    if (!b.active) continue
+    if (Math.hypot(b.vx, b.vz) < MIN_SPEED) { b.vx = 0; b.vz = 0; continue }
+    b.vx *= friction
+    b.vz *= friction
+    b.mesh.position.x += b.vx * dt
+    b.mesh.position.z += b.vz * dt
+  }
+
+  // Ball-ball elastic collisions
+  const active = balls.filter(b => b.active)
+  for (let i = 0; i < active.length; i++) {
+    for (let j = i + 1; j < active.length; j++) {
+      const a = active[i], b = active[j]
+      const dx = b.mesh.position.x - a.mesh.position.x
+      const dz = b.mesh.position.z - a.mesh.position.z
+      const d2 = dx * dx + dz * dz
+      if (d2 < diam * diam && d2 > 1e-6) {
+        const d = Math.sqrt(d2)
+        const nx = dx / d, nz = dz / d
+        const imp = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz
+        if (imp > 0) {
+          a.vx -= imp * nx; a.vz -= imp * nz
+          b.vx += imp * nx; b.vz += imp * nz
+        }
+        const pen = (diam - d) / 2 + 0.0005
+        a.mesh.position.x -= pen * nx; a.mesh.position.z -= pen * nz
+        b.mesh.position.x += pen * nx; b.mesh.position.z += pen * nz
+      }
+    }
+  }
+
+  // Pocket detection (before wall bounce to handle corners correctly)
+  for (const b of active) {
+    for (const [px, pz] of POCKET_XZ) {
+      if (Math.hypot(b.mesh.position.x - px, b.mesh.position.z - pz) < POCKET_RADIUS * 1.4) {
+        b.active = false
+        b.mesh.visible = false
+        break
+      }
+    }
+  }
+
+  // Cushion bounces
+  for (const b of balls) {
+    if (!b.active) continue
+    if (b.mesh.position.x > maxX) { b.mesh.position.x = maxX; b.vx = -Math.abs(b.vx) * 0.75 }
+    if (b.mesh.position.x < -maxX) { b.mesh.position.x = -maxX; b.vx = Math.abs(b.vx) * 0.75 }
+    if (b.mesh.position.z > maxZ) { b.mesh.position.z = maxZ; b.vz = -Math.abs(b.vz) * 0.75 }
+    if (b.mesh.position.z < -maxZ) { b.mesh.position.z = -maxZ; b.vz = Math.abs(b.vz) * 0.75 }
+  }
+}
+
+// ─── Cue positioning ─────────────────────────────────────────────────────────
+
+function positionCue(cue: THREE.Mesh, origin: THREE.Vector3, aimAngle: number, strokeOffset: number) {
+  const dist = CUE_TIP_GAP + CUE_LENGTH / 2 - strokeOffset
+  cue.position.set(
+    origin.x - Math.cos(aimAngle) * dist,
+    origin.y,
+    origin.z - Math.sin(aimAngle) * dist,
+  )
+  // With XYZ Euler order: Rx(0) * Ry(PI-a) * Rz(PI/2) maps local Y → (cos(a), 0, sin(a))
+  cue.rotation.set(0, Math.PI - aimAngle, Math.PI / 2)
+}
+
+// ─── Aim line ─────────────────────────────────────────────────────────────────
+
+function updateAimLine(line: THREE.Line, from: THREE.Vector3, aimAngle: number) {
+  const dx = Math.cos(aimAngle)
+  const dz = Math.sin(aimAngle)
+  const maxX = TABLE_WIDTH / 2 - BALL_RADIUS
+  const maxZ = TABLE_LENGTH / 2 - BALL_RADIUS
+
+  let t = 20
+  if (Math.abs(dx) > 1e-5) t = Math.min(t, ((dx > 0 ? maxX : -maxX) - from.x) / dx)
+  if (Math.abs(dz) > 1e-5) t = Math.min(t, ((dz > 0 ? maxZ : -maxZ) - from.z) / dz)
+
+  const geo = line.geometry as THREE.BufferGeometry
+  const pos = geo.attributes.position as THREE.BufferAttribute
+  pos.setXYZ(0, from.x, from.y, from.z)
+  pos.setXYZ(1, from.x + dx * t, from.y, from.z + dz * t)
+  pos.needsUpdate = true
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function BilliardsScene() {
@@ -440,11 +534,8 @@ export default function BilliardsScene() {
     camera.position.set(0, 4, 4)
     camera.lookAt(0, 0, 0)
 
-    // Lights — global fill
     scene.add(new THREE.AmbientLight(0xfff0d8, 0.9))
     scene.add(new THREE.HemisphereLight(0xffe0a0, 0x3a1e08, 0.7))
-
-    // Corner fill points to light walls & floor
     const fills: [number, number, number][] = [
       [-6, 2, -4], [6, 2, -4], [-6, 2, 4], [6, 2, 4],
     ]
@@ -461,26 +552,101 @@ export default function BilliardsScene() {
     controls.maxDistance   = 12
     controls.maxPolarAngle = Math.PI / 2.1
 
-    // Build scene
     createRoom(scene)
     createTable(scene)
-    const balls = createBalls(scene)
-    const cue   = createCue(scene)
+    const ballStates = createBalls(scene)
+    const cue = createCue(scene)
     createPendantLamps(scene)
 
-    let angle = 0
+    // Aim indicator line
+    const aimGeo = new THREE.BufferGeometry()
+    aimGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3))
+    const aimLine = new THREE.Line(
+      aimGeo,
+      new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.3, transparent: true }),
+    )
+    scene.add(aimLine)
+
+    // Game state
+    const state = {
+      phase: 'aiming' as 'aiming' | 'rolling',
+      aimAngle: Math.PI,
+      shotAnim: -1,
+      shotOrigin: new THREE.Vector3(),
+    }
+
+    const keys = new Set<string>()
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (['ArrowLeft', 'ArrowRight', 'a', 'd', 'Enter', ' '].includes(e.key)) e.preventDefault()
+      keys.add(e.key)
+
+      if ((e.key === 'Enter' || e.key === ' ') && state.phase === 'aiming') {
+        const cb = ballStates[0]
+        if (!cb.active) return
+        state.shotOrigin.copy(cb.mesh.position)
+        cb.vx = Math.cos(state.aimAngle) * SHOT_POWER
+        cb.vz = Math.sin(state.aimAngle) * SHOT_POWER
+        state.phase = 'rolling'
+        state.shotAnim = 0
+      }
+    }
+    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.key)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+
+    const clock = new THREE.Clock()
+
     const animate = () => {
       requestAnimationFrame(animate)
-      angle += 0.005
+      const dt = Math.min(clock.getDelta(), 0.05)
+      const cb = ballStates[0]
 
-      const cueBall = balls[0]
-      cue.position.set(
-        cueBall.position.x + Math.cos(angle) * 1.4,
-        TABLE_HEIGHT / 2 + BALL_RADIUS,
-        cueBall.position.z + Math.sin(angle) * 1.4,
-      )
-      cue.rotation.z = Math.PI / 2
-      cue.rotation.y = -angle
+      if (state.phase === 'aiming') {
+        if (keys.has('ArrowLeft') || keys.has('a')) state.aimAngle -= AIM_SPEED * dt
+        if (keys.has('ArrowRight') || keys.has('d')) state.aimAngle += AIM_SPEED * dt
+
+        if (cb.active) {
+          cue.visible = true
+          aimLine.visible = true
+          positionCue(cue, cb.mesh.position, state.aimAngle, 0)
+          updateAimLine(
+            aimLine,
+            new THREE.Vector3(cb.mesh.position.x, TABLE_HEIGHT / 2 + 0.002, cb.mesh.position.z),
+            state.aimAngle,
+          )
+        } else {
+          cue.visible = false
+          aimLine.visible = false
+        }
+
+      } else {
+        stepPhysics(ballStates, dt)
+
+        // Cue stroke animation
+        if (state.shotAnim >= 0) {
+          state.shotAnim = Math.min(state.shotAnim + dt / 0.12, 1)
+          positionCue(cue, state.shotOrigin, state.aimAngle, state.shotAnim * 0.25)
+          cue.visible = state.shotAnim < 1
+          if (state.shotAnim >= 1) state.shotAnim = -1
+        } else {
+          cue.visible = false
+        }
+        aimLine.visible = false
+
+        const allStopped = ballStates.filter(b => b.active).every(b => b.vx === 0 && b.vz === 0)
+        if (allStopped) {
+          // Respawn cue ball if pocketed
+          if (!cb.active) {
+            cb.active = true
+            cb.mesh.visible = true
+            cb.mesh.position.set(-TABLE_WIDTH / 4, TABLE_HEIGHT / 2 + BALL_RADIUS, 0)
+            cb.vx = 0
+            cb.vz = 0
+          }
+          state.phase = 'aiming'
+        }
+      }
 
       controls.update()
       renderer.render(scene, camera)
@@ -497,6 +663,8 @@ export default function BilliardsScene() {
 
     return () => {
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
       controls.dispose()
       renderer.dispose()
       mount.removeChild(renderer.domElement)

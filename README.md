@@ -53,6 +53,7 @@ npm run preview
 | Orbiter la caméra | Clic gauche + glisser |
 | Zoomer / dézoomer | Molette |
 | Pivoter en vue libre | Clic droit + glisser |
+| ←/→ ou A/D pour tourner l'angle de visée| Entrée ou Espace : frapper |
 
 ## Structure du projet
 
