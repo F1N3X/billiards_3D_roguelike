@@ -1,75 +1,64 @@
-# React + TypeScript + Vite
+# Billiards 3D Roguelike
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Prototype de billard 3D dans un environnement de salle de jeu, construit avec React, Three.js et TypeScript.
 
-Currently, two official plugins are available:
+## Prérequis
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- [Node.js](https://nodejs.org/) v18 ou supérieur
+- npm (inclus avec Node.js)
 
-## React Compiler
+## Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Lancer le projet
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Mode développement (avec hot-reload)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
+```
 
+Ouvre ensuite [http://localhost:5173](http://localhost:5173) dans le navigateur.
+
+### Build de production
+
+```bash
+npm run build
+```
+
+Les fichiers compilés se trouvent dans `dist/`.
+
+### Prévisualiser le build de production
+
+```bash
+npm run preview
+```
+
+## Stack technique
+
+| Outil | Rôle |
+|---|---|
+| [React 19](https://react.dev/) | UI et gestion du cycle de vie |
+| [Three.js](https://threejs.org/) | Rendu 3D (WebGL) |
+| [TypeScript](https://www.typescriptlang.org/) | Typage statique |
+| [Vite](https://vite.dev/) | Bundler et serveur de dev |
+
+## Contrôles
+
+| Action | Contrôle |
+|---|---|
+| Orbiter la caméra | Clic gauche + glisser |
+| Zoomer / dézoomer | Molette |
+| Pivoter en vue libre | Clic droit + glisser |
+
+## Structure du projet
+
+```
+src/
+├── BilliardsScene.tsx   # Scène Three.js (table, boules, salle, lumières)
+├── App.tsx              # Point d'entrée React
+└── main.tsx             # Bootstrap React
 ```
