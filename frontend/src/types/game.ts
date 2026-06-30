@@ -7,10 +7,9 @@ export const GAME_MODE_LABELS: Record<GameMode, string> = {
 export interface LeaderboardEntry {
   rank: number
   pseudo: string
-  avgScore: number
-  avgShots: number
+  score: number
+  shots: number
   rankingScore: number
-  gamesCount: number
 }
 
 export interface PlayerStats {

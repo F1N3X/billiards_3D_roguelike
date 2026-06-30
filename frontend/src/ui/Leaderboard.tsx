@@ -21,7 +21,7 @@ export function Leaderboard({ entries, currentUserPseudo, loading = false }: Pro
       <div className={styles.header}>
         <span className={styles.colRank}>#</span>
         <span className={styles.colPseudo}>Joueur</span>
-        <span className={styles.colRanking} title="Score moyen ÷ coups moyens">Pts/coup</span>
+        <span className={styles.colRanking} title="Score ÷ coups">Pts/coup</span>
         <span className={styles.colScore}>Score</span>
         <span className={styles.colShots}>Coups</span>
       </div>
@@ -32,8 +32,8 @@ export function Leaderboard({ entries, currentUserPseudo, loading = false }: Pro
             <span className={styles.colRank}>{entry.rank}</span>
             <span className={styles.colPseudo}>{entry.pseudo}</span>
             <span className={styles.colRanking}>{entry.rankingScore}</span>
-            <span className={styles.colScore}>{entry.avgScore}</span>
-            <span className={styles.colShots}>{entry.avgShots}</span>
+            <span className={styles.colScore}>{entry.score}</span>
+            <span className={styles.colShots}>{entry.shots}</span>
           </div>
         )
       })}

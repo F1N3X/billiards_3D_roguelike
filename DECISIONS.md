@@ -72,6 +72,16 @@ Le Dockerfile backend est multi-stage (builder `node:20-alpine` → production `
 
 ---
 
+## 2026-06-30 — Leaderboard par run individuel (pas de moyenne par joueur)
+
+**Décision :** Le leaderboard affiche chaque run séparément. Un joueur qui a fait 2 top-10 apparaît deux fois.
+
+**Pourquoi :** La moyenne par joueur masquait les meilleures performances individuelles et pénalisait les joueurs qui expérimentent. Un run = une ligne donne une image fidèle du meilleur jeu possible.
+
+**Alternatives rejetées :** Grouper par userId + `$avg` (comportement précédent) — lisse les pics, fausse la compétition. "Best score per player" — n'affiche qu'une entrée par joueur, cache la progression.
+
+---
+
 ## 2026-06-30 — Sauvegarde automatique de la partie en fin de jeu (mode classique)
 
 **Décision :** Quand un joueur connecté remporte une partie en mode classique, l'`App.tsx` déclenche automatiquement `POST /game-history` avec `userId`, `score` et `shots`. Le statut de sauvegarde (`saving` / `saved` / `error`) est affiché dans `VictoryScreen`.

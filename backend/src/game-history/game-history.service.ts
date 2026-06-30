@@ -55,19 +55,11 @@ export class GameHistoryService {
       .aggregate([
         { $match: { gameMode } },
         {
-          $group: {
-            _id: '$userId',
-            avgScore: { $avg: '$score' },
-            avgShots: { $avg: '$shots' },
-            gamesCount: { $sum: 1 },
-          },
-        },
-        {
           $addFields: {
             rankingScore: {
               $cond: [
-                { $gt: ['$avgShots', 0] },
-                { $divide: ['$avgScore', '$avgShots'] },
+                { $gt: ['$shots', 0] },
+                { $divide: ['$score', '$shots'] },
                 0,
               ],
             },
@@ -78,7 +70,7 @@ export class GameHistoryService {
         {
           $lookup: {
             from: 'users',
-            localField: '_id',
+            localField: 'userId',
             foreignField: '_id',
             as: 'user',
           },
@@ -88,10 +80,9 @@ export class GameHistoryService {
           $project: {
             _id: 0,
             pseudo: '$user.pseudo',
-            avgScore: { $round: ['$avgScore', 0] },
-            avgShots: { $round: ['$avgShots', 1] },
+            score: 1,
+            shots: 1,
             rankingScore: { $round: ['$rankingScore', 1] },
-            gamesCount: 1,
           },
         },
       ])

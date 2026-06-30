@@ -14,10 +14,9 @@ export interface GameHistory {
 export interface LeaderboardEntry {
   rank: number;
   pseudo: string;
-  avgScore: number;
-  avgShots: number;
+  score: number;
+  shots: number;
   rankingScore: number;
-  gamesCount: number;
 }
 
 export interface PlayerStats {
