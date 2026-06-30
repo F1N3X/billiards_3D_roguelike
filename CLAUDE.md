@@ -46,6 +46,22 @@ Billard 3D Roguelike est un jeu de billard en 3D où le joueur doit vider la tab
 - ❌ Mélanger logique métier et composants d'affichage.
 - ❌ Hardcoder les constantes de gameplay.
 
+
+## Scripts déterministes à appeler
+
+Pour les calculs et règles métier, **utilise ces fonctions** :
+
+- `src/physics/step-physics.ts` → simulation physique
+- `src/logic/score.ts` → calcul du score
+- `src/scene/create-table.ts` → création de la table
+- `src/scene/create-room.ts` → création de la salle
+- `src/scene/create-balls.ts` → création et placement des boules
+- `src/scene/create-lamps.ts` → création et placement des lampes
+- `src/scene/create-cue.ts` → création et placement de la queue
+- `src/config/*.ts` → constantes de gameplay
+- `src/types/*.ts` → types partagés
+
+
 ## Anti-patterns d'ingénierie
 1. ❌ **Big bang refacto** : pas de feature flag, pas de coexistence. Remplace, nettoie, commit.
 2. ❌ **No stub / no TODO** : pas de `return null; // TODO`. Si commité, ça MARCHE.
@@ -65,3 +81,33 @@ npm run preview
 
 ## ## Fichiers de référence
 - `README.md` → présentation utilisateur du projet
+- `DECISIONS.md` → suivis des explications des raisons des ajouts des features
+
+
+## Documentation
+
+Lorsqu'une modification change :
+
+- une décision d'architecture,
+- une règle métier,
+- une convention importante,
+- une mécanique de gameplay,
+- ou la façon dont le projet est organisé,
+
+mettre à jour `DECISIONS.md`.
+
+Chaque entrée doit expliquer :
+
+- la décision prise ;
+- pourquoi elle a été prise ;
+- les alternatives rejetées (si pertinent).
+
+
+## Workflow
+
+Avant toute modification :
+
+1. Comprendre les modules existants.
+2. Réutiliser les systèmes existants.
+3. Ne jamais dupliquer une logique déjà présente.
+4. Si une modification change une décision d'architecture ou de gameplay, mettre à jour `DECISIONS.md` et `README.md`.
