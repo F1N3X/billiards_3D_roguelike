@@ -103,6 +103,10 @@ Chaque entrée doit expliquer :
 - pourquoi elle a été prise ;
 - les alternatives rejetées (si pertinent).
 
+Ensuite, met à jour `README.md` pour documenter l'intégralité du projet :
+- comment lancer
+- architecture
+- utilisation
 
 ## Workflow
 
@@ -112,3 +116,10 @@ Avant toute modification :
 2. Réutiliser les systèmes existants.
 3. Ne jamais dupliquer une logique déjà présente.
 4. Si une modification change une décision d'architecture ou de gameplay, mettre à jour `DECISIONS.md` et `README.md`.
+
+
+## Memory
+
+Ton fichier de mémoire se trouve dans le dossier `./memory` avec  les fichiers suivants :
+- `MEMORY.md`
+- `project_backend_architecture.md`

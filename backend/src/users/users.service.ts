@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { Db, ObjectId } from 'mongodb';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { MONGO_DB } from '../database/database.module';
 import { User } from './user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
