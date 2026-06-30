@@ -8,6 +8,7 @@ Billard 3D Roguelike est un jeu de billard en 3D où le joueur doit vider la tab
 - **Framework front** : [React]
 - **Rendu 3D** : [Three.js / React Three Fiber]
 - **Physique** : [stepPhysics]
+- **Framework back** : Nest.js
 - **Styling** : [CSS modules]
 - **Tests** : [Vitest]
 
@@ -51,15 +52,15 @@ Billard 3D Roguelike est un jeu de billard en 3D où le joueur doit vider la tab
 
 Pour les calculs et règles métier, **utilise ces fonctions** :
 
-- `src/physics/step-physics.ts` → simulation physique
-- `src/logic/score.ts` → calcul du score
-- `src/scene/create-table.ts` → création de la table
-- `src/scene/create-room.ts` → création de la salle
-- `src/scene/create-balls.ts` → création et placement des boules
-- `src/scene/create-lamps.ts` → création et placement des lampes
-- `src/scene/create-cue.ts` → création et placement de la queue
-- `src/config/*.ts` → constantes de gameplay
-- `src/types/*.ts` → types partagés
+- `frontend/src/physics/step-physics.ts` → simulation physique
+- `frontend/src/logic/score.ts` → calcul du score
+- `frontend/src/scene/create-table.ts` → création de la table
+- `frontend/src/scene/create-room.ts` → création de la salle
+- `frontend/src/scene/create-balls.ts` → création et placement des boules
+- `frontend/src/scene/create-lamps.ts` → création et placement des lampes
+- `frontend/src/scene/create-cue.ts` → création et placement de la queue
+- `frontend/src/config/*.ts` → constantes de gameplay
+- `frontend/src/types/*.ts` → types partagés
 
 
 ## Anti-patterns d'ingénierie
