@@ -1,13 +1,14 @@
 import { useReducer, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './auth/auth-context'
-import { saveGameHistory } from './api/api'
+import { saveGameHistory, fetchLeaderboard, fetchPlayerStats } from './api/api'
 import BilliardsScene from './BilliardsScene'
-import { GameHud } from './ui/GameHud'
+import { GameDashboard } from './ui/GameDashboard'
 import { VictoryScreen } from './ui/VictoryScreen'
 import { MainMenu } from './ui/MainMenu'
 import { LoginPage } from './ui/LoginPage'
 import { AccountPage } from './ui/AccountPage'
 import { computeShotScore, computeVictoryBonus } from './logic/score'
+import type { LeaderboardEntry, PlayerStats } from './types/game'
 
 type Page = 'menu' | 'login' | 'account' | 'game'
 
@@ -52,16 +53,44 @@ function GameScreen({ onMenu }: { onMenu: () => void }) {
   const { user } = useAuth()
   const [gameState, dispatch] = useReducer(reduce, initialGameState)
   const [savedStatus, setSavedStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true)
+  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null)
+
+  const refreshLeaderboard = () => {
+    setLeaderboardLoading(true)
+    fetchLeaderboard('classic')
+      .then(setLeaderboard)
+      .catch(err => console.error('[GameScreen] fetchLeaderboard', err))
+      .finally(() => setLeaderboardLoading(false))
+  }
+
+  useEffect(() => {
+    refreshLeaderboard()
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+    fetchPlayerStats(user._id, 'classic')
+      .then(setPlayerStats)
+      .catch(err => console.error('[GameScreen] fetchPlayerStats', err))
+  }, [user])
 
   useEffect(() => {
     if (!gameState.victory || !user) return
 
     setSavedStatus('saving')
     saveGameHistory(user._id, gameState.victory.totalScore, gameState.victory.shots)
-      .then(() => setSavedStatus('saved'))
+      .then(() => {
+        setSavedStatus('saved')
+        refreshLeaderboard()
+        fetchPlayerStats(user._id, 'classic')
+          .then(setPlayerStats)
+          .catch(err => console.error('[GameScreen] fetchPlayerStats post-save', err))
+      })
       .catch(err => {
         setSavedStatus('error')
-        console.error('[GameScreen] saveGameHistory failed', err)
+        console.error('[GameScreen] saveGameHistory', err)
       })
   }, [gameState.victory, user])
 
@@ -86,7 +115,14 @@ function GameScreen({ onMenu }: { onMenu: () => void }) {
         key={gameState.gameKey}
         onShotResolved={handleShotResolved}
       />
-      <GameHud score={gameState.score} shots={gameState.shots} />
+      <GameDashboard
+        gameMode="classic"
+        score={gameState.score}
+        shots={gameState.shots}
+        leaderboard={leaderboard}
+        playerStats={playerStats}
+        leaderboardLoading={leaderboardLoading}
+      />
       {gameState.victory && (
         <VictoryScreen
           totalScore={gameState.victory.totalScore}

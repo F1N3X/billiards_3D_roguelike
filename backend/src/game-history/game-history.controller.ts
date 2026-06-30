@@ -25,6 +25,19 @@ export class GameHistoryController {
     return this.gameHistoryService.findAll();
   }
 
+  @Get('leaderboard/:gameMode')
+  getLeaderboard(@Param('gameMode') gameMode: string) {
+    return this.gameHistoryService.getLeaderboard(gameMode);
+  }
+
+  @Get('stats/:userId/:gameMode')
+  getPlayerStats(
+    @Param('userId') userId: string,
+    @Param('gameMode') gameMode: string,
+  ) {
+    return this.gameHistoryService.getPlayerStats(userId, gameMode);
+  }
+
   @Get('user/:userId')
   findByUser(@Param('userId') userId: string) {
     return this.gameHistoryService.findByUser(userId);

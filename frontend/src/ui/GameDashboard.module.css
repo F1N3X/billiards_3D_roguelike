@@ -1,0 +1,71 @@
+/* ── Shared card styles ── */
+
+.statsCard,
+.leaderboardCard {
+  position: absolute;
+  top: 16px;
+  background: rgba(8, 12, 8, 0.78);
+  border: 1px solid rgba(255, 210, 80, 0.15);
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  padding: 14px 16px;
+  pointer-events: none;
+}
+
+.cardLabel {
+  font-family: 'Georgia', serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 120, 0.35);
+  margin-bottom: 12px;
+}
+
+/* ── Stats card — top-left ── */
+
+.statsCard {
+  left: 16px;
+  min-width: 160px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 20px;
+  row-gap: 8px;
+  align-items: baseline;
+}
+
+.statLabel {
+  font-family: 'Georgia', serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 120, 0.45);
+}
+
+.statValue {
+  font-family: 'Georgia', serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd97a;
+  line-height: 1;
+  text-align: right;
+}
+
+/* ── Leaderboard card — top-right ── */
+
+.leaderboardCard {
+  right: 16px;
+  min-width: 300px;
+  max-width: 340px;
+}
+
+.loginHint {
+  font-family: 'Georgia', serif;
+  font-size: 10px;
+  color: rgba(255, 210, 120, 0.28);
+  text-align: center;
+  margin: 8px 0 0;
+  font-style: italic;
+}

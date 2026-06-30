@@ -12,6 +12,8 @@ vi.mock('../api/api', () => ({
   register: vi.fn(),
   updatePseudo: vi.fn(),
   saveGameHistory: vi.fn(),
+  fetchLeaderboard: vi.fn().mockResolvedValue([]),
+  fetchPlayerStats: vi.fn().mockResolvedValue(null),
 }))
 
 interface AuthContextValue {
@@ -60,12 +62,12 @@ describe('MainMenu', () => {
 
   it('affiche le bouton Mode Classique', () => {
     renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />)
-    expect(screen.getByText('Mode Classique')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Mode Classique/ })).toBeInTheDocument()
   })
 
   it('appelle onPlay au clic sur Mode Classique', async () => {
     renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />)
-    await userEvent.click(screen.getByText('Mode Classique'))
+    await userEvent.click(screen.getByRole('button', { name: /Mode Classique/ }))
     expect(onPlay).toHaveBeenCalledOnce()
   })
 
