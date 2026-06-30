@@ -1,0 +1,109 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  animation: fadeIn 0.7s ease-in forwards;
+  animation-delay: 1s;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+.panel {
+  background: rgba(15, 10, 5, 0.92);
+  border: 2px solid rgba(255, 210, 80, 0.6);
+  border-radius: 16px;
+  padding: 40px 56px;
+  text-align: center;
+  font-family: 'Georgia', serif;
+  color: #ffd97a;
+  min-width: 320px;
+  transform: scale(0.85);
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay: 1s;
+}
+
+@keyframes popIn {
+  to { transform: scale(1); }
+}
+
+.title {
+  font-size: 38px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  margin-bottom: 28px;
+  text-shadow: 0 0 20px rgba(255, 210, 80, 0.7);
+}
+
+.scoreRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 32px;
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: rgba(255, 210, 120, 0.75);
+}
+
+.scoreRow span:last-child {
+  color: #ffd97a;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid rgba(255, 210, 80, 0.3);
+  margin: 14px 0;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 32px;
+  font-size: 17px;
+  color: rgba(255, 210, 120, 0.9);
+  margin-bottom: 6px;
+}
+
+.totalRow span:last-child {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffe57a;
+}
+
+.shotsLabel {
+  font-size: 13px;
+  color: rgba(255, 210, 120, 0.5);
+  margin-bottom: 32px;
+}
+
+.replayButton {
+  background: linear-gradient(135deg, #c8920a, #e8b020);
+  border: none;
+  border-radius: 10px;
+  color: #1a0e00;
+  font-family: 'Georgia', serif;
+  font-size: 17px;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  padding: 13px 40px;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 4px 16px rgba(200, 140, 0, 0.4);
+}
+
+.replayButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(200, 140, 0, 0.6);
+}
+
+.replayButton:active {
+  transform: translateY(0);
+}

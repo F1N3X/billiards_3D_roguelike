@@ -12,8 +12,14 @@ import { createCue } from './scene/create-cue'
 import { createPendantLamps } from './scene/create-lamps'
 import { stepPhysics, positionCue, updateAimLine } from './physics/step-physics'
 
-export default function BilliardsScene() {
+interface Props {
+  onShotResolved: (ballsPotted: number, scratch: boolean, isVictory: boolean) => void
+}
+
+export default function BilliardsScene({ onShotResolved }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
+  const callbackRef = useRef(onShotResolved)
+  callbackRef.current = onShotResolved
 
   useEffect(() => {
     const mount = mountRef.current!
@@ -70,10 +76,11 @@ export default function BilliardsScene() {
     scene.add(aimLine)
 
     const state = {
-      phase: 'aiming' as 'aiming' | 'rolling',
+      phase: 'aiming' as 'aiming' | 'rolling' | 'victory',
       aimAngle: INITIAL_AIM_ANGLE,
       shotAnim: -1,
       shotOrigin: new THREE.Vector3(),
+      activeBeforeShot: ballStates.slice(1).filter(b => b.active).length,
     }
 
     const keys = new Set<string>()
@@ -85,6 +92,7 @@ export default function BilliardsScene() {
       if ((e.key === 'Enter' || e.key === ' ') && state.phase === 'aiming') {
         const cb = ballStates[0]
         if (!cb.active) return
+        state.activeBeforeShot = ballStates.slice(1).filter(b => b.active).length
         state.shotOrigin.copy(cb.mesh.position)
         cb.vx = Math.cos(state.aimAngle) * SHOT_POWER
         cb.vz = Math.sin(state.aimAngle) * SHOT_POWER
@@ -121,7 +129,7 @@ export default function BilliardsScene() {
           aimLine.visible = false
         }
 
-      } else {
+      } else if (state.phase === 'rolling') {
         stepPhysics(ballStates, dt)
 
         if (state.shotAnim >= 0) {
@@ -136,16 +144,32 @@ export default function BilliardsScene() {
 
         const allStopped = ballStates.filter(b => b.active).every(b => b.vx === 0 && b.vz === 0)
         if (allStopped) {
-          if (!cb.active) {
-            cb.active = true
-            cb.mesh.visible = true
-            cb.mesh.position.set(-TABLE_WIDTH / 4, TABLE_HEIGHT / 2 + BALL_RADIUS, 0)
-            cb.vx = 0
-            cb.vz = 0
+          const coloredNow = ballStates.slice(1).filter(b => b.active).length
+          const ballsPotted = state.activeBeforeShot - coloredNow
+          const scratch = !cb.active
+          const isVictory = coloredNow === 0
+
+          callbackRef.current(ballsPotted, scratch, isVictory)
+
+          if (isVictory) {
+            state.phase = 'victory'
+            cue.visible = false
+            aimLine.visible = false
+            controls.autoRotate = true
+            controls.autoRotateSpeed = 10
+          } else {
+            if (scratch) {
+              cb.active = true
+              cb.mesh.visible = true
+              cb.mesh.position.set(-TABLE_WIDTH / 4, TABLE_HEIGHT / 2 + BALL_RADIUS, 0)
+              cb.vx = 0
+              cb.vz = 0
+            }
+            state.phase = 'aiming'
           }
-          state.phase = 'aiming'
         }
       }
+      // 'victory' phase: camera autoRotates, nothing else to update
 
       controls.update()
       renderer.render(scene, camera)

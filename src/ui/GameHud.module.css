@@ -1,0 +1,38 @@
+.hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 20px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.block {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 220, 100, 0.25);
+  border-radius: 8px;
+  padding: 10px 18px;
+  min-width: 110px;
+  text-align: center;
+}
+
+.label {
+  font-family: 'Georgia', serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 220, 100, 0.65);
+  margin-bottom: 4px;
+}
+
+.value {
+  font-family: 'Georgia', serif;
+  font-size: 26px;
+  font-weight: bold;
+  color: #ffd97a;
+  line-height: 1;
+}
