@@ -49,3 +49,33 @@ Le Dockerfile backend est multi-stage (builder `node:20-alpine` → production `
 **Pourquoi :** Un secret commité dans une image Docker est accessible à quiconque pull l'image. L'`env_file` permet de garder les secrets hors du contexte de build.
 
 **Alternatives rejetées :** `COPY .env` dans le Dockerfile (fuite de secrets), variables hardcodées (idem).
+
+---
+
+## 2026-06-30 — Authentification via localStorage (sans JWT ni sessions serveur)
+
+**Décision :** La connexion utilise `POST /users/login` (email + mot de passe, vérification bcrypt), et l'objet utilisateur retourné est stocké en `localStorage` côté client. Aucun token JWT, aucune session serveur.
+
+**Pourquoi :** Le projet est un prototype mono-utilisateur sans besoins de sécurité avancés. Une session JWT/serveur aurait nécessité un module auth NestJS complet (guards, stratégies Passport, refresh tokens) pour un gain nul à ce stade. Le localStorage est suffisant pour persister l'identité entre rechargements.
+
+**Alternatives rejetées :** JWT (over-engineering pour ce prototype), sessions serveur (stateful, complexe à dockeriser), cookies httpOnly (nécessite CORS credentials + configuration CSRF).
+
+---
+
+## 2026-06-30 — Navigation par état React (sans routeur)
+
+**Décision :** La navigation entre les pages (menu, connexion, compte, partie) est gérée par un état `page: 'menu' | 'login' | 'account' | 'game'` dans `AppRouter`. Pas de react-router-dom.
+
+**Pourquoi :** Le jeu n'a pas d'URL profondes à partager ni de navigation browser (bouton retour navigateur) pertinente. Un routeur ajouterait une dépendance et une complexité inutiles. La machine à états est lisible et suffisante.
+
+**Alternatives rejetées :** react-router-dom (over-engineering pour 4 pages sans deep-links).
+
+---
+
+## 2026-06-30 — Sauvegarde automatique de la partie en fin de jeu (mode classique)
+
+**Décision :** Quand un joueur connecté remporte une partie en mode classique, l'`App.tsx` déclenche automatiquement `POST /game-history` avec `userId`, `score` et `shots`. Le statut de sauvegarde (`saving` / `saved` / `error`) est affiché dans `VictoryScreen`.
+
+**Pourquoi :** La sauvegarde est une conséquence de la victoire, pas une action utilisateur. La déclencher dans `App.tsx` (qui a accès au contexte auth et à l'état de jeu) maintient la séparation : `VictoryScreen` reste un composant d'affichage pur.
+
+**Alternatives rejetées :** Déclencher la sauvegarde dans `VictoryScreen` (mélange logique + affichage), bouton manuel "Sauvegarder" (friction inutile).

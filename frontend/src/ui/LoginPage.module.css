@@ -1,0 +1,128 @@
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, #1a2e1a 0%, #0a0d0a 100%);
+}
+
+.panel {
+  background: rgba(15, 10, 5, 0.94);
+  border: 1px solid rgba(255, 210, 80, 0.25);
+  border-radius: 16px;
+  padding: 36px 48px;
+  width: 360px;
+  position: relative;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: rgba(255, 210, 120, 0.5);
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+  display: block;
+  transition: color 0.15s ease;
+}
+
+.backButton:hover {
+  color: rgba(255, 210, 120, 0.9);
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 28px;
+  border-bottom: 1px solid rgba(255, 210, 80, 0.2);
+}
+
+.tab,
+.tabActive {
+  background: none;
+  border: none;
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  padding: 8px 20px;
+  cursor: pointer;
+  color: rgba(255, 210, 120, 0.5);
+  transition: color 0.15s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tabActive {
+  color: #ffd97a;
+  border-bottom-color: #ffd97a;
+}
+
+.tab:hover {
+  color: rgba(255, 210, 120, 0.8);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: rgba(255, 210, 120, 0.65);
+  letter-spacing: 0.04em;
+}
+
+.input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 210, 80, 0.25);
+  border-radius: 8px;
+  color: #ffd97a;
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: rgba(255, 210, 80, 0.6);
+}
+
+.error {
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: #ff7a7a;
+  text-align: center;
+}
+
+.submitButton {
+  background: linear-gradient(135deg, #c8920a, #e8b020);
+  border: none;
+  border-radius: 10px;
+  color: #1a0e00;
+  font-family: 'Georgia', serif;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 4px 16px rgba(200, 140, 0, 0.4);
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(200, 140, 0, 0.6);
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

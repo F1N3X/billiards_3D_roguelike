@@ -156,14 +156,20 @@ billiards_3D_roguelike/
 | Méthode | Route | Description |
 |---|---|---|
 | `POST` | `/users` | Créer un utilisateur |
+| `POST` | `/users/login` | Connexion (retourne l'utilisateur sans passwordHash) |
 | `GET` | `/users` | Lister tous les utilisateurs |
 | `GET` | `/users/:id` | Récupérer un utilisateur |
-| `PATCH` | `/users/:id` | Modifier un utilisateur |
+| `PATCH` | `/users/:id` | Modifier un utilisateur (pseudo, email, password) |
 | `DELETE` | `/users/:id` | Supprimer un utilisateur |
 
 **Corps de création :**
 ```json
 { "pseudo": "string", "email": "string", "password": "string" }
+```
+
+**Corps de connexion :**
+```json
+{ "email": "string", "password": "string" }
 ```
 
 ### Historique des parties — `/game-history`
@@ -181,7 +187,17 @@ billiards_3D_roguelike/
 { "userId": "string", "score": 0, "shots": 0, "gameMode": "classic" }
 ```
 
-## Contrôles
+## Menu et navigation
+
+L'application démarre sur un **menu principal** avec trois destinations :
+
+- **Mode Classique** — lance une partie. Raccourci : `Entrée`.
+- **Connexion / Inscription** — affiché si non connecté. Permet de créer un compte ou se connecter avec email + mot de passe.
+- **Mon Compte** — affiché si connecté. Permet de modifier son pseudo.
+
+La session est persistée dans `localStorage` (aucun token JWT). En mode classique, si le joueur est connecté et remporte la partie, le score est automatiquement sauvegardé en base via `POST /game-history`.
+
+## Contrôles en jeu
 
 | Action | Contrôle |
 |---|---|
@@ -190,3 +206,4 @@ billiards_3D_roguelike/
 | Vue libre | Clic droit + glisser |
 | Orienter la visée | ← / → ou A / D |
 | Frapper | Entrée ou Espace |
+| Retour au menu (login/compte) | Echap |

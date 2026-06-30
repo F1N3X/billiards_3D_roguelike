@@ -1,0 +1,138 @@
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, #1a2e1a 0%, #0a0d0a 100%);
+}
+
+.panel {
+  background: rgba(15, 10, 5, 0.94);
+  border: 1px solid rgba(255, 210, 80, 0.25);
+  border-radius: 16px;
+  padding: 36px 48px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: rgba(255, 210, 120, 0.5);
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+  display: block;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+
+.backButton:hover {
+  color: rgba(255, 210, 120, 0.9);
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: 24px;
+  color: #ffd97a;
+  margin: 0 0 6px;
+}
+
+.email {
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: rgba(255, 210, 120, 0.45);
+  margin: 0 0 28px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: rgba(255, 210, 120, 0.65);
+  letter-spacing: 0.04em;
+}
+
+.input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 210, 80, 0.25);
+  border-radius: 8px;
+  color: #ffd97a;
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: rgba(255, 210, 80, 0.6);
+}
+
+.error {
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: #ff7a7a;
+  text-align: center;
+}
+
+.success {
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: #7aff9a;
+  text-align: center;
+}
+
+.saveButton {
+  background: linear-gradient(135deg, #c8920a, #e8b020);
+  border: none;
+  border-radius: 10px;
+  color: #1a0e00;
+  font-family: 'Georgia', serif;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 4px 16px rgba(200, 140, 0, 0.4);
+}
+
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(200, 140, 0, 0.6);
+}
+
+.saveButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.logoutButton {
+  background: none;
+  border: none;
+  color: rgba(255, 100, 80, 0.6);
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 24px;
+  padding: 4px 0;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+
+.logoutButton:hover {
+  color: rgba(255, 100, 80, 0.9);
+}

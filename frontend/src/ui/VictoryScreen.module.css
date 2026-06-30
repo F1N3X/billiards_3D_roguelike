@@ -84,6 +84,26 @@
   margin-bottom: 32px;
 }
 
+.saveStatus {
+  font-size: 12px;
+  color: rgba(122, 255, 154, 0.75);
+  margin-bottom: 16px;
+  font-family: 'Georgia', serif;
+}
+
+.saveError {
+  font-size: 12px;
+  color: rgba(255, 120, 100, 0.8);
+  margin-bottom: 16px;
+  font-family: 'Georgia', serif;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
 .replayButton {
   background: linear-gradient(135deg, #c8920a, #e8b020);
   border: none;
@@ -93,7 +113,7 @@
   font-size: 17px;
   font-weight: bold;
   letter-spacing: 0.06em;
-  padding: 13px 40px;
+  padding: 13px 32px;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
   box-shadow: 0 4px 16px rgba(200, 140, 0, 0.4);
@@ -106,4 +126,21 @@
 
 .replayButton:active {
   transform: translateY(0);
+}
+
+.menuButton {
+  background: transparent;
+  border: 1px solid rgba(255, 210, 80, 0.4);
+  border-radius: 10px;
+  color: rgba(255, 210, 120, 0.8);
+  font-family: 'Georgia', serif;
+  font-size: 17px;
+  padding: 13px 28px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.menuButton:hover {
+  border-color: rgba(255, 210, 80, 0.8);
+  color: #ffd97a;
 }

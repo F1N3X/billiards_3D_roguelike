@@ -37,6 +37,8 @@ export const BALL_COLORS = [
 
 export const INITIAL_AIM_ANGLE = 0
 
+export const API_BASE_URL = 'http://localhost:3000'
+
 export const SCORE_PER_BALL = 100
 export const COMBO_BONUS_PER_EXTRA = 50
 export const SCRATCH_PENALTY = -200

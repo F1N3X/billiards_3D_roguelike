@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Db, ObjectId } from 'mongodb';
 import * as bcrypt from 'bcryptjs';
@@ -10,6 +11,7 @@ import { MONGO_DB } from '../database/database.module';
 import { User } from './user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { LoginDto } from './dto/login.dto';
 
 const COLLECTION = 'users';
 const SALT_ROUNDS = 10;
@@ -79,6 +81,24 @@ export class UsersService {
       throw new NotFoundException(`User ${id} not found`);
     }
     return result;
+  }
+
+  async login(dto: LoginDto): Promise<Omit<User, 'passwordHash'>> {
+    const user = await this.db
+      .collection<User>(COLLECTION)
+      .findOne({ email: dto.email });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const valid = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const { passwordHash: _, ...safeUser } = user;
+    return safeUser;
   }
 
   async remove(id: string): Promise<void> {

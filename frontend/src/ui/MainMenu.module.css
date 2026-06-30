@@ -1,0 +1,125 @@
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, #1a2e1a 0%, #0a0d0a 100%);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: 64px;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  color: #ffd97a;
+  text-shadow: 0 0 40px rgba(255, 210, 80, 0.5);
+  margin: 0;
+}
+
+.subtitle {
+  font-family: 'Georgia', serif;
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 120, 0.5);
+  margin: 0 0 32px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 280px;
+}
+
+.primaryButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #c8920a, #e8b020);
+  border: none;
+  border-radius: 12px;
+  color: #1a0e00;
+  font-family: 'Georgia', serif;
+  font-size: 19px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  padding: 16px 32px;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 4px 20px rgba(200, 140, 0, 0.5);
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(200, 140, 0, 0.7);
+}
+
+.primaryButton:active {
+  transform: translateY(0);
+}
+
+.hint {
+  font-size: 11px;
+  font-family: 'Georgia', serif;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  letter-spacing: 0.05em;
+}
+
+.secondaryButton {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255, 210, 80, 0.4);
+  border-radius: 10px;
+  color: rgba(255, 210, 120, 0.8);
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.secondaryButton:hover {
+  border-color: rgba(255, 210, 80, 0.8);
+  color: #ffd97a;
+  background: rgba(255, 210, 80, 0.06);
+}
+
+.logoutButton {
+  background: none;
+  border: none;
+  color: rgba(255, 100, 80, 0.6);
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s ease;
+}
+
+.logoutButton:hover {
+  color: rgba(255, 100, 80, 0.9);
+}
+
+.welcome {
+  margin-top: 16px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: rgba(255, 210, 120, 0.5);
+}
+
+.welcome strong {
+  color: rgba(255, 210, 120, 0.9);
+}
