@@ -6,8 +6,8 @@ describe('lockMiddlePockets', () => {
     expect(lockMiddlePockets.id).toBe('lock_middle_pockets')
   })
 
-  it('coûte 3 pièces', () => {
-    expect(lockMiddlePockets.cost).toBe(3)
+  it('coûte 2 pièces', () => {
+    expect(lockMiddlePockets.cost).toBe(2)
   })
 
   it('crée un buff lockMiddlePockets', () => {

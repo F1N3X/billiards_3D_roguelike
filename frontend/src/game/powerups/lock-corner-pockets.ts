@@ -4,7 +4,7 @@ export const lockCornerPockets: PowerUp = {
   id: 'lock_corner_pockets',
   name: 'Coins Verrouillés',
   description: 'Bloque les 4 trous de coin pour ce tour',
-  cost: 3,
+  cost: 2,
   icon: '⬛',
   createBuff: () => ({ effect: 'lockCornerPockets' }),
 }

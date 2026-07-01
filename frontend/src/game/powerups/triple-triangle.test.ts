@@ -6,8 +6,8 @@ describe('tripleTriangle', () => {
     expect(tripleTriangle.id).toBe('triple_shot_triangle')
   })
 
-  it('coûte 3 pièces', () => {
-    expect(tripleTriangle.cost).toBe(3)
+  it('coûte 4 pièces', () => {
+    expect(tripleTriangle.cost).toBe(4)
   })
 
   it('crée un buff tripleTriangle', () => {
