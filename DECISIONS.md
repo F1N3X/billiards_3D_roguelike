@@ -163,3 +163,54 @@ Le Dockerfile backend est multi-stage (builder `node:20-alpine` → production `
 **Coût :** 3 pièces — moins cher que l'explosif (4) car l'effet augmente le nombre de boules à empocher, ce qui est double tranchant.
 
 **Alternatives rejetées :** Tableau `extraColoredBalls` séparé (duplicating la logique de comptage de boules) ; spawner le clone à la position de la boule source (superposition immédiate → physique instable) ; cloner vers la position de la queue de billard (pas toujours libre).
+
+---
+
+## 2026-07-01 — 7 nouveaux power-ups Rumble (Séisme, Bandes, Tapis, Magnétique, Courbes)
+
+**Décision :** Ajout de 7 power-ups au mode Rumble, tous suivant le pattern registry existant (`PowerUp` + `BuffEffect` union + fichier dédié + test).
+
+**Séisme (`seisme`)** : au tir, un timer `seismeRemaining` décroit pendant `SEISME_DURATION = 2.5s`. Chaque frame, une impulsion aléatoire `SEISME_IMPULSE_PER_SEC * dt` est appliquée à toutes les boules actives. L'effet est continu et progressif (pas un one-shot), ce qui le rend visuellement lisible.
+
+**Bandes Rebondissantes (`bouncyWalls`)** : `wallRestitution = BOUNCY_WALLS_RESTITUTION` est passé en option à `stepPhysics` via `StepPhysicsOpts`. Réduit à `1.3` (au lieu du `1.5` initial) pour éviter les cycles stables à `MAX_BALL_SPEED`.
+
+**Tapis Glissant / Collant (`slipperyFelt` / `stickyFelt`)** : `frictionOverride` dans `StepPhysicsOpts` remplace `FRICTION` par `SLIPPERY_FRICTION = 0.993` ou `STICKY_FRICTION = 0.958` pour ce tir.
+
+**Boule Magnétique (`magneticCue`)** : après chaque `stepPhysics`, les boules colorées dans `[BALL_RADIUS*5, MAGNET_RADIUS]` sont attirées vers la blanche la plus proche ("nearest-only" pour éviter l'accumulation de forces concurrentes). Force `MAGNET_FORCE = 4.0`, rayon `MAGNET_RADIUS = 1.2`.
+
+**Tir Courbé G/D (`curveLeft` / `curveRight`)** : une force perpendiculaire à la vitesse des blanches (`(-vz, vx) * CURVE_FORCE * dt`) est appliquée avant `stepPhysics` à chaque frame. La preview de visée est remplacée par un arc géométrique (quart de cercle de rayon `SHOT_POWER / CURVE_FORCE`) affiché en orange.
+
+**Pourquoi `StepPhysicsOpts` plutôt que des paramètres séparés :** l'ajout de plusieurs options optionnelles à `stepPhysics` forcerait une signature instable. L'objet options est extensible sans breaking change.
+
+**Alternatives rejetées :** Séisme one-shot (pas assez visuel) ; magnétisme appliqué avant `stepPhysics` (la friction annulait la force sur les boules lentes) ; preview courbe simulée frame par frame (interdit par CLAUDE.md — recalcul de physique dans React).
+
+---
+
+## 2026-07-01 — Refonte du modèle de friction physique
+
+**Décision :** La friction reste multiplicative (`v *= FRICTION^(dt*60)`, décroissance exponentielle). `FRICTION` passe de `0.984` à `0.978` pour un arrêt ~30% plus rapide (~4s au lieu de ~5.5s). Un plafond `MAX_BALL_SPEED = 8.0` est appliqué après chaque rebond sur les bandes pour empêcher l'emballement des Bandes Rebondissantes.
+
+**Pourquoi multiplicatif et non constant :** la décélération constante (modèle de Coulomb pur) est linéaire — la boule perd la même quantité de vitesse par frame quelle que soit sa vitesse. Le modèle multiplicatif est proportionnel à la vitesse courante : la boule décélère vite quand elle va vite, et progressivement quand elle est lente. C'est ce qui donne l'impression de réalisme sur un tapis de billard.
+
+**Plafond MAX_BALL_SPEED :** sans ce plafond, les Bandes Rebondissantes peuvent créer un cycle stable où `v_avant * restitution * friction_factor >= v_avant`. Avec `BOUNCY_WALLS_RESTITUTION = 1.3` et le plafond à `8.0`, le cycle converge toujours vers 0 en ≤ 6s.
+
+**Alternatives rejetées :** Décélération constante (essayée, perçue comme non-progressive) ; friction `0.984` sans plafond (trop lente + softlock bandes) ; timeout de tir global (plus complexe, moins ciblé).
+
+---
+
+## 2026-07-01 — Rééquilibrage des coûts des power-ups
+
+**Décision :** Grille de coût révisée en 5 paliers (1–6 pièces) selon l'impact gameplay.
+
+| Palier | Coût | Power-ups |
+|---|---|---|
+| S | 6 | Clone (4 blanches supplémentaires) |
+| A | 5 | Triangle (3 blanches en éventail) |
+| B | 4 | Triple Tir, Tir Explosif |
+| C | 3 | Clonage au contact, Boule Magnétique |
+| D | 2 | Tir Courbé G/D, Coins Verrouillés, Séisme, Bandes Rebondissantes |
+| E | 1 | Milieux Verrouillés, Tapis Glissant, Tapis Collant |
+
+**Critères :** contrôle du résultat (fort = cher), résilience au chaos (Séisme peu fiable = pas cher), impact réduit après ajustement physique (Bandes Rebondissantes ramenées à 1.3×).
+
+**Alternatives rejetées :** coûts uniformes (rend tous les bonus équivalents, détruit la décision d'achat) ; coût variable selon le score (complexité inutile à ce stade).

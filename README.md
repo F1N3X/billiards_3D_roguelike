@@ -187,6 +187,33 @@ billiards_3D_roguelike/
 { "userId": "string", "score": 0, "shots": 0, "gameMode": "classic" }
 ```
 
+## Mode Rumble
+
+Mode roguelike où le joueur gagne **+1 pièce par coup** et peut acheter des power-ups entre les tirs. La main de 4 slots est tirée aléatoirement à chaque tour (Fisher-Yates partiel sur le pool complet).
+
+### Power-ups disponibles
+
+| Nom | Coût | Effet |
+|---|---|---|
+| Clone | 6 | 4 boules blanches supplémentaires avec chacune leur queue |
+| Triangle | 5 | 3 blanches en triangle (1 en pointe, 2 en éventail) |
+| Triple Tir | 4 | 3 blanches en ligne dans l'axe du tir |
+| Tir Explosif | 4 | Explosion radiale au premier contact blanc→coloré |
+| Clonage au contact | 3 | Chaque boule touchée génère un clone coloré |
+| Boule Magnétique | 3 | La(les) blanche(s) attirent les boules colorées proches |
+| Tir Courbé Gauche | 2 | Arc de cercle vers la gauche (preview orange) |
+| Tir Courbé Droite | 2 | Arc de cercle vers la droite (preview orange) |
+| Coins Verrouillés | 2 | Bloque les 4 trous de coin pour ce tir |
+| Séisme | 2 | Impulsions aléatoires continues sur 2.5s après le tir |
+| Bandes Rebondissantes | 2 | Les bandes renvoient les boules à ×1.3 leur vitesse |
+| Milieux Verrouillés | 1 | Bloque les 2 trous du milieu pour ce tir |
+| Tapis Glissant | 1 | Friction très réduite — les boules roulent beaucoup plus loin |
+| Tapis Collant | 1 | Friction très augmentée — les boules s'arrêtent rapidement |
+
+### Mode développeur
+
+`VITE_IS_DEV=true` dans `frontend/.env` : pièces illimitées (affichage `∞`), aucune déduction.
+
 ## Menu et navigation
 
 L'application démarre sur un **menu principal** avec trois destinations :

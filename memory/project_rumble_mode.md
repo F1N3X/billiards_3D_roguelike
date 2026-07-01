@@ -1,27 +1,36 @@
 ---
 name: project-rumble-mode
-description: Mode Rumble — architecture power-ups, économie de pièces, effets actifs dans BilliardsScene
+description: Mode Rumble — architecture power-ups, économie pièces, registry pattern, 14 power-ups actifs, physique et coûts rééquilibrés
 metadata:
   type: project
 ---
 
-Mode Rumble ajouté le 2026-07-01.
+Mode Rumble ajouté le 2026-07-01, enrichi le 2026-07-01.
 
-**Why:** Le joueur voulait un mode roguelike avec des bonus achetables entre les tours.
+**Why:** Mode roguelike avec bonus achetables — le joueur gagne +1 pièce par coup et achète des effets pour ce tir uniquement.
 
-**Architecture:**
-- `types/power-up.ts` — `PowerUp`, `ActiveEffect` types
-- `config/power-ups.ts` — définitions et coûts (Triple Tir = 2 pièces)
-- `logic/power-up-pool.ts` — `drawInitialHand()` → 4 slots (1 actif + 3 locked)
-- `ui/RumbleHud.tsx` + `RumbleHud.module.css` — barre en bas avec pièces + 4 cartes
-- `RumbleGameScreen` dans `App.tsx` — gère currency, hand, activeEffects
+**Architecture power-ups (pattern registry) :**
+- `frontend/src/game/powerups/types.ts` — unions `BuffEffect` et `PowerUpId`
+- `frontend/src/game/powerups/<nom>.ts` — un fichier par bonus (`id`, `name`, `description`, `cost`, `createBuff()`)
+- `frontend/src/game/powerups/registry.ts` — `PowerUpRegistry.get(id)` / `PowerUpRegistry.all()`
+- `frontend/src/game/powerups/<nom>.test.ts` — test de coût, d'id et de createBuff pour chaque bonus
 
-**Économie:** commence à 1 pièce, +1 par coup. Triple Tir coûte 2 → accessible dès le tour 2.
+**14 power-ups actifs (coût) :**
+clone(6), triple_shot_triangle(5), triple_shot(4), explosive_shot(4), clone_on_contact(3), magnetic_cue(3), curve_left(2), curve_right(2), lock_corner_pockets(2), seisme(2), bouncy_walls(2), lock_middle_pockets(1), slippery_felt(1), sticky_felt(1)
 
-**Communication BilliardsScene:** `activeEffects?: Set<ActiveEffect>` prop lu via `activeEffectsRef.current` dans la boucle Three.js (même pattern que `callbackRef`). Effects effacés après chaque coup.
+**Économie:** commence à 1 pièce, +1 par coup. Main de 4 slots tirée aléatoirement (Fisher-Yates) à chaque tour depuis le pool complet. Effets effacés après chaque coup.
 
-**Triple Tir dans BilliardsScene:** `state.tripleShot.remaining` décompte les sub-shots. `onShotResolved` appelé une seule fois après le 3e tir.
+**Communication BilliardsScene:** `activeEffects?: Set<BuffEffect>` prop lu via `activeEffectsRef.current` dans la boucle Three.js. `buildStepPhysicsOpts(effects)` traduit les effets actifs en `StepPhysicsOpts` passées à `stepPhysics`.
 
-**Pas de backend Rumble:** scores non persistés (leaderboard vide, savedStatus=null).
+**Physique notable :**
+- Friction multiplicative : `FRICTION = 0.978` (~4s pour s'arrêter depuis vitesse max)
+- `MAX_BALL_SPEED = 8.0` — plafond après chaque rebond (anti-softlock bandes rebondissantes)
+- `BOUNCY_WALLS_RESTITUTION = 1.3` (réduit depuis 1.5 pour garantir convergence)
+- Magnétique après stepPhysics, force `MAGNET_FORCE = 4.0`, rayon `MAGNET_RADIUS = 1.2`, nearest-only
+- Courbe : force perpendiculaire `(-vz, vx) * CURVE_FORCE * dt` avant stepPhysics ; preview = quart de cercle géométrique
 
-**How to apply:** Pour ajouter un nouveau power-up: ajouter à `POWER_UP_DEFINITIONS`, étendre `PowerUpId`/`ActiveEffect`, gérer l'effet dans BilliardsScene, ajouter au POOL dans `power-up-pool.ts`.
+**Mode dev:** `VITE_IS_DEV=true` → pièces illimitées, aucune déduction.
+
+**Pas de backend Rumble:** scores non persistés.
+
+**How to apply:** Pour ajouter un nouveau power-up, utiliser le skill `add-new-power-up`.
