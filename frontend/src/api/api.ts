@@ -34,7 +34,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 }
 
 export async function register(pseudo: string, email: string, password: string): Promise<AuthUser> {
-  const user = await request<Omit<AuthUser, 'token'>>('/users', {
+  await request<Omit<AuthUser, 'token'>>('/users', {
     method: 'POST',
     body: JSON.stringify({ pseudo, email, password }),
   })
