@@ -15,7 +15,13 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 function loadUser(): AuthUser | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as AuthUser) : null
+    if (!raw) return null
+    const user = JSON.parse(raw) as AuthUser
+    if (!user.token) {
+      localStorage.removeItem(STORAGE_KEY)
+      return null
+    }
+    return user
   } catch {
     return null
   }

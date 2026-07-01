@@ -82,14 +82,15 @@ function GameScreen({ onMenu }: { onMenu: () => void }) {
   }, [user])
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !user.token) return
+    sessionIdRef.current = null
     startGameSession('classic', user.token)
       .then(({ sessionId }) => { sessionIdRef.current = sessionId })
       .catch(err => console.error('[GameScreen] startGameSession', err))
-  }, [user])
+  }, [user, gameState.gameKey])
 
   useEffect(() => {
-    if (!gameState.victory || !user || !sessionIdRef.current) return
+    if (!gameState.victory || !user || !user.token || !sessionIdRef.current) return
 
     setSavedStatus('saving')
     saveGameHistory(user._id, 'classic', gameState.victory.totalScore, gameState.victory.shots, user.token, sessionIdRef.current)
@@ -183,14 +184,15 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
   }, [user])
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !user.token) return
+    sessionIdRef.current = null
     startGameSession('rumble', user.token)
       .then(({ sessionId }) => { sessionIdRef.current = sessionId })
       .catch(err => console.error('[RumbleGameScreen] startGameSession', err))
-  }, [user])
+  }, [user, gameState.gameKey])
 
   useEffect(() => {
-    if (!gameState.victory || !user || !sessionIdRef.current) return
+    if (!gameState.victory || !user || !user.token || !sessionIdRef.current) return
 
     setSavedStatus('saving')
     saveGameHistory(user._id, 'rumble', gameState.victory.totalScore, gameState.victory.shots, user.token, sessionIdRef.current)
