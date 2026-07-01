@@ -7,6 +7,7 @@ import {
   SHOT_POWER, AIM_SPEED, INITIAL_AIM_ANGLE,
   POCKET_XZ, POCKET_RADIUS,
   CLONE_COUNT,
+  EXPLOSION_RADIUS, EXPLOSION_FORCE,
 } from './config/constants'
 import { createRoom } from './scene/create-room'
 import { createTable } from './scene/create-table'
@@ -51,6 +52,26 @@ function tryPlaceClone(
     if (clearOfBalls && clearOfClones && clearOfPockets) return [x, z]
   }
   return null
+}
+
+function buildLockedPocketIndices(effects: Set<BuffEffect>): Set<number> | undefined {
+  const indices = new Set<number>()
+  if (effects.has('lockCornerPockets')) [0, 1, 2, 3].forEach(i => indices.add(i))
+  if (effects.has('lockMiddlePockets')) [4, 5].forEach(i => indices.add(i))
+  return indices.size > 0 ? indices : undefined
+}
+
+function applyExplosion(balls: BallState[], cx: number, cz: number) {
+  for (const b of balls) {
+    if (!b.active) continue
+    const dx = b.mesh.position.x - cx
+    const dz = b.mesh.position.z - cz
+    const dist = Math.hypot(dx, dz)
+    if (dist >= EXPLOSION_RADIUS || dist < 1e-4) continue
+    const factor = EXPLOSION_FORCE * (1 - dist / EXPLOSION_RADIUS)
+    b.vx += (dx / dist) * factor
+    b.vz += (dz / dist) * factor
+  }
 }
 
 function buildCloneData(existing: BallState[]): CloneData {
@@ -132,6 +153,37 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
     const cue = createCue(scene)
     createPendantLamps(scene)
 
+    // ── Pocket lock overlays (one disc per pocket, hidden by default) ─────────
+    const cornerLockMat = new THREE.MeshStandardMaterial({
+      color: 0xdd2222, roughness: 1, metalness: 0, transparent: true, opacity: 0.72,
+    })
+    const middleLockMat = new THREE.MeshStandardMaterial({
+      color: 0xff8800, roughness: 1, metalness: 0, transparent: true, opacity: 0.72,
+    })
+    const lockOverlays: THREE.Mesh[] = POCKET_XZ.map(([px, pz], i) => {
+      const mat = i < 4 ? cornerLockMat : middleLockMat
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(POCKET_RADIUS, POCKET_RADIUS, 0.012, 32), mat)
+      disc.position.set(px, TABLE_HEIGHT / 2 + 0.006, pz)
+      disc.visible = false
+      scene.add(disc)
+      return disc
+    })
+
+    // ── Explosion ring pool (one ring per concurrent explosion) ──────────────
+    const EXPLOSION_RING_POOL = 9
+    const ringGeo = new THREE.RingGeometry(0.85, 1.0, 48)
+    const explosionRings = Array.from({ length: EXPLOSION_RING_POOL }, () => {
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xff7700, transparent: true, opacity: 0, side: THREE.DoubleSide,
+      })
+      const ring = new THREE.Mesh(ringGeo, mat)
+      ring.rotation.x = -Math.PI / 2
+      ring.position.y = TABLE_HEIGHT / 2 + 0.004
+      ring.visible = false
+      scene.add(ring)
+      return ring
+    })
+
     const aimGeo = new THREE.BufferGeometry()
     aimGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3))
     const aimLine = new THREE.Line(
@@ -182,6 +234,9 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       activeBeforeShot: ballStates.slice(1).filter(b => b.active).length,
       extraCueBalls: [] as BallState[],
       cloneData: null as CloneData | null,
+      explosionFiredBy: new Set<THREE.Mesh>(),
+      explosionVisuals: [] as Array<{ progress: number; ringIndex: number }>,
+      clonedBallsThisShot: new Set<THREE.Mesh>(),
     }
 
     function cleanupExtraCueBalls() {
@@ -209,6 +264,8 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
 
       state.activeBeforeShot = ballStates.slice(1).filter(b => b.active).length
       state.shotOrigin.copy(cb.mesh.position)
+      state.explosionFiredBy.clear()
+      state.explosionVisuals = []
 
       const dx  = Math.cos(state.aimAngle)
       const dz  = Math.sin(state.aimAngle)
@@ -380,10 +437,78 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
           }
         }
 
+        // ── Pocket lock overlay visibility ────────────────────────────────────
+        const effects = activeEffectsRef.current
+        lockOverlays.forEach((disc, i) => {
+          disc.visible = (i < 4 && effects.has('lockCornerPockets')) || (i >= 4 && effects.has('lockMiddlePockets'))
+        })
+
       } else if (state.phase === 'rolling') {
         hideGhosts()
 
-        stepPhysics([...ballStates, ...state.extraCueBalls], dt)
+        const lockedPockets = buildLockedPocketIndices(activeEffectsRef.current)
+        stepPhysics([...ballStates, ...state.extraCueBalls], dt, lockedPockets)
+
+        // ── Explosive shot: each cue ball triggers one explosion on first contact
+        if (activeEffectsRef.current.has('explosiveShot')) {
+          const cueBalls = [ballStates[0], ...state.extraCueBalls].filter(b => b.active)
+          const CONTACT_THRESHOLD = BALL_RADIUS * 2 * 1.15
+          for (const cb of cueBalls) {
+            if (state.explosionFiredBy.has(cb.mesh)) continue
+            for (const target of ballStates.slice(1)) {
+              if (!target.active) continue
+              const dist = Math.hypot(
+                target.mesh.position.x - cb.mesh.position.x,
+                target.mesh.position.z - cb.mesh.position.z,
+              )
+              if (dist < CONTACT_THRESHOLD) {
+                const ecx = cb.mesh.position.x
+                const ecz = cb.mesh.position.z
+                applyExplosion([...ballStates, ...state.extraCueBalls], ecx, ecz)
+                state.explosionFiredBy.add(cb.mesh)
+                const usedRings = new Set(state.explosionVisuals.map(v => v.ringIndex))
+                const ringIdx = explosionRings.findIndex((_, i) => !usedRings.has(i))
+                if (ringIdx >= 0) {
+                  explosionRings[ringIdx].position.set(ecx, TABLE_HEIGHT / 2 + 0.004, ecz)
+                  state.explosionVisuals.push({ progress: 0, ringIndex: ringIdx })
+                }
+                break
+              }
+            }
+          }
+        }
+
+        // ── Clone on contact: clone each colored ball touched by a cue ball ────
+        if (activeEffectsRef.current.has('cloneOnContact')) {
+          const cueBalls = [ballStates[0], ...state.extraCueBalls].filter(b => b.active)
+          const CONTACT_DIST = BALL_RADIUS * 2 * 1.15
+          const coloredSnapshot = ballStates.slice(1)
+          for (const cueBall of cueBalls) {
+            for (const target of coloredSnapshot) {
+              if (!target.active || state.clonedBallsThisShot.has(target.mesh)) continue
+              const dist = Math.hypot(
+                target.mesh.position.x - cueBall.mesh.position.x,
+                target.mesh.position.z - cueBall.mesh.position.z,
+              )
+              if (dist < CONTACT_DIST) {
+                const pos = tryPlaceClone(ballStates, [])
+                if (pos) {
+                  const cloneMesh = new THREE.Mesh(
+                    target.mesh.geometry,
+                    (target.mesh.material as THREE.MeshStandardMaterial).clone(),
+                  )
+                  cloneMesh.position.set(pos[0], CUE_Y, pos[1])
+                  cloneMesh.castShadow = true
+                  scene.add(cloneMesh)
+                  ballStates.push({ mesh: cloneMesh, vx: 0, vz: 0, active: true })
+                  state.activeBeforeShot += 1
+                  state.clonedBallsThisShot.add(target.mesh)
+                  state.clonedBallsThisShot.add(cloneMesh)
+                }
+              }
+            }
+          }
+        }
 
         if (state.shotAnim >= 0) {
           state.shotAnim = Math.min(state.shotAnim + dt / 0.12, 1)
@@ -415,6 +540,7 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
           }
 
           cleanupExtraCueBalls()
+          state.clonedBallsThisShot.clear()
 
           const isVictory = coloredNow === 0
           callbackRef.current(ballsPotted, scratch, isVictory)
@@ -441,6 +567,21 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       }
       // 'victory': camera autoRotates only
 
+      // ── Explosion ring animations (one per active explosion) ─────────────────
+      for (let i = state.explosionVisuals.length - 1; i >= 0; i--) {
+        const v = state.explosionVisuals[i]
+        const ring = explosionRings[v.ringIndex]
+        ring.visible = true
+        ring.scale.setScalar(EXPLOSION_RADIUS * Math.max(v.progress, 0.01))
+        ;(ring.material as THREE.MeshBasicMaterial).opacity = 0.72 * (1 - v.progress)
+        if (v.progress >= 1) {
+          ring.visible = false
+          state.explosionVisuals.splice(i, 1)
+        } else {
+          v.progress = Math.min(v.progress + dt / 0.4, 1)
+        }
+      }
+
       controls.update()
       renderer.render(scene, camera)
     }
@@ -463,9 +604,14 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       mount.removeEventListener('mouseup', onMouseUp)
       cleanupExtraCueBalls()
       for (const m of [...ghostBalls, ...ghostCues, ...ghostAimLines]) scene.remove(m)
+      for (const m of lockOverlays) scene.remove(m)
+      for (const ring of explosionRings) { scene.remove(ring); ring.material.dispose() }
+      ringGeo.dispose()
       ghostBallMat.dispose()
       ghostCueMat.dispose()
       ghostAimMat.dispose()
+      cornerLockMat.dispose()
+      middleLockMat.dispose()
       controls.dispose()
       renderer.dispose()
       mount.removeChild(renderer.domElement)

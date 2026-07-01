@@ -2,9 +2,12 @@ import type { PowerUp } from '../game/powerups'
 import { PowerUpRegistry } from '../game/powerups'
 import { RUMBLE_HAND_SIZE } from '../config/power-ups'
 
-export function drawInitialHand(): (PowerUp | null)[] {
-  const pool = PowerUpRegistry.all()
-  const hand: (PowerUp | null)[] = pool.slice(0, RUMBLE_HAND_SIZE)
-  while (hand.length < RUMBLE_HAND_SIZE) hand.push(null)
-  return hand
+export function drawHand(): PowerUp[] {
+  const pool = [...PowerUpRegistry.all()]
+  const take = Math.min(RUMBLE_HAND_SIZE, pool.length)
+  for (let i = 0; i < take; i++) {
+    const j = i + Math.floor(Math.random() * (pool.length - i))
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+  return pool.slice(0, take)
 }

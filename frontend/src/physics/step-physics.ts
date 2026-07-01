@@ -5,7 +5,7 @@ import {
 } from '../config/constants'
 import type { BallState } from '../types/billiards'
 
-export function stepPhysics(balls: BallState[], dt: number) {
+export function stepPhysics(balls: BallState[], dt: number, lockedPocketIndices?: Set<number>) {
   const friction = Math.pow(FRICTION, dt * 60)
   const maxX = TABLE_WIDTH / 2 - BALL_RADIUS
   const maxZ = TABLE_LENGTH / 2 - BALL_RADIUS
@@ -43,7 +43,9 @@ export function stepPhysics(balls: BallState[], dt: number) {
   }
 
   for (const b of active) {
-    for (const [px, pz] of POCKET_XZ) {
+    for (let i = 0; i < POCKET_XZ.length; i++) {
+      if (lockedPocketIndices?.has(i)) continue
+      const [px, pz] = POCKET_XZ[i]
       if (Math.hypot(b.mesh.position.x - px, b.mesh.position.z - pz) < POCKET_RADIUS * 1.4) {
         b.active = false
         b.mesh.visible = false

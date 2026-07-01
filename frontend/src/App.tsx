@@ -9,8 +9,8 @@ import { LoginPage } from './ui/LoginPage'
 import { AccountPage } from './ui/AccountPage'
 import { RumbleHud } from './ui/RumbleHud'
 import { computeShotScore, computeVictoryBonus } from './logic/score'
-import { drawInitialHand } from './logic/power-up-pool'
-import { RUMBLE_INITIAL_CURRENCY, RUMBLE_CURRENCY_PER_TURN } from './config/power-ups'
+import { drawHand } from './logic/power-up-pool'
+import { RUMBLE_INITIAL_CURRENCY, RUMBLE_CURRENCY_PER_TURN, IS_DEV } from './config/power-ups'
 import type { LeaderboardEntry, PlayerStats } from './types/game'
 import type { PowerUp, BuffEffect } from './game/powerups'
 
@@ -146,7 +146,7 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
   const { user } = useAuth()
   const [gameState, dispatch] = useReducer(reduce, initialGameState)
   const [currency, setCurrency] = useState(RUMBLE_INITIAL_CURRENCY)
-  const [hand] = useState<(PowerUp | null)[]>(drawInitialHand)
+  const [hand, setHand] = useState<PowerUp[]>(drawHand)
   const [activeEffects, setActiveEffects] = useState<Set<BuffEffect>>(new Set())
   const [isRolling, setIsRolling] = useState(false)
   const [savedStatus, setSavedStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -194,18 +194,19 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
   const toggleBonus = (powerUp: PowerUp) => {
     const buff = powerUp.createBuff()
     if (activeEffects.has(buff.effect)) {
-      setCurrency(c => c + powerUp.cost)
+      if (!IS_DEV) setCurrency(c => c + powerUp.cost)
       setActiveEffects(prev => { const next = new Set(prev); next.delete(buff.effect); return next })
       return
     }
-    if (currency < powerUp.cost) return
-    setCurrency(c => c - powerUp.cost)
+    if (!IS_DEV && currency < powerUp.cost) return
+    if (!IS_DEV) setCurrency(c => c - powerUp.cost)
     setActiveEffects(prev => new Set([...prev, buff.effect]))
   }
 
   const handleShotResolved = (ballsPotted: number, scratch: boolean, isVictory: boolean) => {
     setActiveEffects(new Set())
     setCurrency(c => c + RUMBLE_CURRENCY_PER_TURN)
+    setHand(drawHand())
     dispatch({ type: 'shot_resolved', ballsPotted, scratch, isVictory })
   }
 
@@ -213,6 +214,7 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
     setSavedStatus('idle')
     setCurrency(RUMBLE_INITIAL_CURRENCY)
     setActiveEffects(new Set())
+    setHand(drawHand())
     dispatch({ type: 'replay' })
     refreshLeaderboard()
   }
@@ -244,6 +246,7 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
         hand={hand}
         activeEffects={activeEffects}
         isRolling={isRolling}
+        isDev={IS_DEV}
         onToggle={toggleBonus}
       />
       {gameState.victory && (

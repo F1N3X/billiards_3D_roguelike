@@ -105,3 +105,61 @@ Le Dockerfile backend est multi-stage (builder `node:20-alpine` → production `
 **Pourquoi :** La sauvegarde est une conséquence de la victoire, pas une action utilisateur. La déclencher dans `App.tsx` (qui a accès au contexte auth et à l'état de jeu) maintient la séparation : `VictoryScreen` reste un composant d'affichage pur.
 
 **Alternatives rejetées :** Déclencher la sauvegarde dans `VictoryScreen` (mélange logique + affichage), bouton manuel "Sauvegarder" (friction inutile).
+
+---
+
+## 2026-07-01 — Power-ups de verrouillage de trous (Coins / Milieux)
+
+**Décision :** Deux nouveaux power-ups Rumble : `lock_corner_pockets` (verrouille les 4 coins) et `lock_middle_pockets` (verrouille les 2 trous du milieu), coûtant 3 pièces chacun.
+
+**Mécanique :** `stepPhysics` reçoit un paramètre optionnel `lockedPocketIndices?: Set<number>`. Quand un trou est dans ce set, sa détection de « balle aspirée » est sautée : la balle continue de rouler normalement à travers la zone. Les indices 0–3 de `POCKET_XZ` sont les coins, 4–5 les milieux — cohérent avec `create-table.ts`.
+
+**Visuel :** `BilliardsScene` crée un disc 3D semi-transparent (rouge pour les coins, orange pour les milieux) positionné au-dessus de chaque trou concerné. La visibilité est mise à jour à chaque frame dans la boucle `animate` via `activeEffectsRef` (même pattern que les autres effets).
+
+**Synergies :** Les deux effets sont cumulables ; `buildLockedPocketIndices` combine les deux sets.
+
+**Pourquoi modifier `stepPhysics` plutôt que `BilliardsScene` seul :** La règle « ce trou ne gobe pas les boules » est une règle physique, pas visuelle. L'exclure du moteur physique est la source de vérité correcte.
+
+**Alternatives rejetées :** Filtrer les boules tombées dans `BilliardsScene` après coup (trop tard, la balle est déjà `active = false`) ; ajouter une géométrie de collision pour les trous (complexité inutile dans ce moteur custom).
+
+---
+
+## 2026-07-01 — Mode dev : pièces illimitées + main aléatoire à chaque tour
+
+**Décision :** `VITE_IS_DEV=true` dans `frontend/.env` active un mode développeur dans le mode Rumble. En mode dev : pas de déduction de pièces, affichage `∞` dans le HUD. Indépendamment du mode dev, la main de 4 power-ups est désormais retirée aléatoirement du pool à chaque tour (Fisher-Yates partiel dans `drawHand()`).
+
+**Pourquoi :** Le mode dev évite de rejouer pour tester chaque power-up. La main aléatoire par tour change le gameplay d'une liste fixe (boring) vers une mécanique de draft tournante, cohérente avec l'intention roguelike.
+
+**`IS_DEV` lu une seule fois** au module-load depuis `import.meta.env.VITE_IS_DEV` — pas de state React, pas de contexte. La constante est partagée entre `App.tsx` et `RumbleHud.tsx`.
+
+**Alternatives rejetées :** Utiliser `.env.development` (plus propre mais plus complexe pour un simple toggle) ; currency infinie via une valeur élevée (masque le vrai compteur).
+
+---
+
+## 2026-07-01 — Power-up Tir Explosif
+
+**Décision :** `explosive_shot` déclenche une explosion radiale au premier contact boule blanche → boule colorée. Toutes les boules actives dans un rayon `EXPLOSION_RADIUS = 0.6` reçoivent une impulsion radiale avec décroissance linéaire (`EXPLOSION_FORCE * (1 - dist/radius)`).
+
+**Détection du contact :** après chaque appel `stepPhysics`, on vérifie si une boule blanche est à moins de `BALL_RADIUS * 2 * 1.15` d'une boule colorée (le facteur 1.15 absorbe la correction de séparation interne de `stepPhysics` qui laisse les boules à `2*BALL_RADIUS + 0.001` après collision). L'explosion ne se déclenche qu'une fois par tir (`state.explosionTriggered`), réinitialisé dans `fireShot()`.
+
+**Visuel :** un anneau 3D (`RingGeometry`) au point de contact se dilate de 0 à `EXPLOSION_RADIUS` en 0.4s avec un fondu. L'animation tourne en dehors des branches de phase pour finir même après la fin du rolling.
+
+**Pourquoi dans BilliardsScene plutôt que stepPhysics :** l'explosion est une règle de gameplay (premier contact cue→colored), pas une règle physique générale. La placer dans `stepPhysics` l'obligerait à connaître la notion de "boule blanche", ce qui sortirait du rôle du moteur physique.
+
+---
+
+## 2026-07-01 — Power-up Clonage au contact
+
+**Décision :** `clone_on_contact` clone chaque boule colorée touchée par la boule blanche : un exemplaire identique (même géométrie, matériau cloné) apparaît en position aléatoire libre sur la table. Le clone est intégré directement dans `ballStates` (pas dans un tableau parallèle) pour qu'il participe nativement à la physique, au comptage de boules et à la condition de victoire.
+
+**Comptage des boules pottées :** quand un clone est ajouté pendant le rolling, `state.activeBeforeShot` est incrémenté de 1. Ainsi le calcul `ballsPotted = activeBeforeShot - coloredNow` reste correct : il tient compte des clones créés ET des clones pottés pendant ce même tir.
+
+**Anti-boucle infinie :** `state.clonedBallsThisShot: Set<THREE.Mesh>` enregistre la boule source ET la boule clone dès la création. Une boule déjà dans ce set ne peut plus être clonée pendant le même tir, empêchant les chaînes exponentielles. Le set est vidé à la fin du rolling (via `state.clonedBallsThisShot.clear()`).
+
+**Les clones persistent d'un tir à l'autre** : intégrés à `ballStates`, ils restent sur la table jusqu'à être empochés. À partir du tir suivant, ils peuvent eux-mêmes être clonés si l'effet est encore actif.
+
+**Synergies :** fonctionne avec tous les autres effets (tripleShot, tripleTriangle, lockPockets, explosiveShot) sans code conditionnel supplémentaire. Les clones participent à l'explosion et aux tirs multiples comme n'importe quelle boule colorée.
+
+**Coût :** 3 pièces — moins cher que l'explosif (4) car l'effet augmente le nombre de boules à empocher, ce qui est double tranchant.
+
+**Alternatives rejetées :** Tableau `extraColoredBalls` séparé (duplicating la logique de comptage de boules) ; spawner le clone à la position de la boule source (superposition immédiate → physique instable) ; cloner vers la position de la queue de billard (pas toujours libre).

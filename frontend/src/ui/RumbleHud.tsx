@@ -3,33 +3,26 @@ import styles from './RumbleHud.module.css'
 
 interface Props {
   currency: number
-  hand: (PowerUp | null)[]
+  hand: PowerUp[]
   activeEffects: Set<BuffEffect>
   isRolling: boolean
+  isDev?: boolean
   onToggle: (powerUp: PowerUp) => void
 }
 
-export function RumbleHud({ currency, hand, activeEffects, isRolling, onToggle }: Props) {
+export function RumbleHud({ currency, hand, activeEffects, isRolling, isDev, onToggle }: Props) {
   return (
     <div className={styles.hud}>
       <div className={styles.currency}>
         <span className={styles.coinIcon}>◈</span>
-        <span className={styles.coinValue}>{currency}</span>
+        <span className={styles.coinValue}>{isDev ? '∞' : currency}</span>
         <span className={styles.coinLabel}>pièces</span>
       </div>
       <div className={styles.hand}>
-        {hand.map((powerUp, i) => {
-          if (!powerUp) {
-            return (
-              <div key={i} className={styles.cardLocked}>
-                <span className={styles.lockIcon}>⌖</span>
-                <span className={styles.lockText}>Bientôt</span>
-              </div>
-            )
-          }
+        {hand.map((powerUp) => {
           const buff = powerUp.createBuff()
           const isActive = activeEffects.has(buff.effect)
-          const canAfford = currency >= powerUp.cost
+          const canAfford = isDev || currency >= powerUp.cost
           const isDisabled = isRolling || (!canAfford && !isActive)
 
           return (
