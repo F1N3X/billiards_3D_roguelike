@@ -8,6 +8,11 @@ import {
   POCKET_XZ, POCKET_RADIUS,
   CLONE_COUNT,
   EXPLOSION_RADIUS, EXPLOSION_FORCE,
+  SEISME_IMPULSE_PER_SEC, SEISME_DURATION,
+  BOUNCY_WALLS_RESTITUTION,
+  SLIPPERY_FRICTION,
+  STICKY_FRICTION,
+  MAGNET_FORCE, MAGNET_RADIUS,
 } from './config/constants'
 import { createRoom } from './scene/create-room'
 import { createTable } from './scene/create-table'
@@ -59,6 +64,16 @@ function buildLockedPocketIndices(effects: Set<BuffEffect>): Set<number> | undef
   if (effects.has('lockCornerPockets')) [0, 1, 2, 3].forEach(i => indices.add(i))
   if (effects.has('lockMiddlePockets')) [4, 5].forEach(i => indices.add(i))
   return indices.size > 0 ? indices : undefined
+}
+
+function buildStepPhysicsOpts(effects: Set<BuffEffect>) {
+  return {
+    lockedPocketIndices: buildLockedPocketIndices(effects),
+    wallRestitution: effects.has('bouncyWalls') ? BOUNCY_WALLS_RESTITUTION : undefined,
+    frictionOverride: effects.has('slipperyFelt') ? SLIPPERY_FRICTION
+      : effects.has('stickyFelt') ? STICKY_FRICTION
+      : undefined,
+  }
 }
 
 function applyExplosion(balls: BallState[], cx: number, cz: number) {
@@ -237,6 +252,7 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       explosionFiredBy: new Set<THREE.Mesh>(),
       explosionVisuals: [] as Array<{ progress: number; ringIndex: number }>,
       clonedBallsThisShot: new Set<THREE.Mesh>(),
+      seismeRemaining: 0,
     }
 
     function cleanupExtraCueBalls() {
@@ -291,6 +307,8 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
           { ...s, ox: s.ox - dx * SPAWN_GAP - px * SPAWN_GAP, oz: s.oz - dz * SPAWN_GAP - pz * SPAWN_GAP },
         ])
       }
+
+      if (effects.has('seisme')) state.seismeRemaining = SEISME_DURATION
 
       cb.vx = dx * SHOT_POWER
       cb.vz = dz * SHOT_POWER
@@ -446,8 +464,45 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       } else if (state.phase === 'rolling') {
         hideGhosts()
 
-        const lockedPockets = buildLockedPocketIndices(activeEffectsRef.current)
-        stepPhysics([...ballStates, ...state.extraCueBalls], dt, lockedPockets)
+        const effects = activeEffectsRef.current
+        const physicsOpts = buildStepPhysicsOpts(effects)
+
+        if (effects.has('magneticCue')) {
+          const cueBalls = [ballStates[0], ...state.extraCueBalls].filter(b => b.active)
+          for (const colored of ballStates.slice(1)) {
+            if (!colored.active) continue
+            let nearest: BallState | null = null
+            let nearestDist = Infinity
+            for (const white of cueBalls) {
+              const dx = white.mesh.position.x - colored.mesh.position.x
+              const dz = white.mesh.position.z - colored.mesh.position.z
+              const dist = Math.hypot(dx, dz)
+              if (dist >= BALL_RADIUS * 5 && dist < MAGNET_RADIUS && dist < nearestDist) {
+                nearest = white
+                nearestDist = dist
+              }
+            }
+            if (nearest) {
+              const mdx = nearest.mesh.position.x - colored.mesh.position.x
+              const mdz = nearest.mesh.position.z - colored.mesh.position.z
+              const factor = MAGNET_FORCE * (1 - nearestDist / MAGNET_RADIUS) * dt
+              colored.vx += (mdx / nearestDist) * factor
+              colored.vz += (mdz / nearestDist) * factor
+            }
+          }
+        }
+
+        stepPhysics([...ballStates, ...state.extraCueBalls], dt, physicsOpts)
+
+        if (state.seismeRemaining > 0) {
+          for (const ball of ballStates.slice(1)) {
+            if (!ball.active) continue
+            const angle = Math.random() * Math.PI * 2
+            ball.vx += Math.cos(angle) * SEISME_IMPULSE_PER_SEC * dt
+            ball.vz += Math.sin(angle) * SEISME_IMPULSE_PER_SEC * dt
+          }
+          state.seismeRemaining = Math.max(0, state.seismeRemaining - dt)
+        }
 
         // ── Explosive shot: each cue ball triggers one explosion on first contact
         if (activeEffectsRef.current.has('explosiveShot')) {

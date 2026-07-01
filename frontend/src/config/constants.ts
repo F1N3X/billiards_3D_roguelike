@@ -11,7 +11,7 @@ export const CUE_LENGTH = 2.5
 export const CUE_TIP_GAP = 0.05
 export const SHOT_POWER = 6.0
 export const FRICTION = 0.984
-export const MIN_SPEED = 0.003
+export const MIN_SPEED = 0.025
 export const AIM_SPEED = 2.2
 
 export const ROOM_W = 16
@@ -41,6 +41,14 @@ export const CLONE_COUNT = 4
 
 export const EXPLOSION_RADIUS = 0.9
 export const EXPLOSION_FORCE = 10.0
+
+export const SEISME_IMPULSE_PER_SEC = 3.5
+export const SEISME_DURATION = 2.5
+export const BOUNCY_WALLS_RESTITUTION = 1.5
+export const SLIPPERY_FRICTION = 0.997
+export const STICKY_FRICTION = 0.965
+export const MAGNET_FORCE = 0.8
+export const MAGNET_RADIUS = 0.9
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 

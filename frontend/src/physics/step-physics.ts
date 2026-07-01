@@ -5,8 +5,16 @@ import {
 } from '../config/constants'
 import type { BallState } from '../types/billiards'
 
-export function stepPhysics(balls: BallState[], dt: number, lockedPocketIndices?: Set<number>) {
-  const friction = Math.pow(FRICTION, dt * 60)
+export interface StepPhysicsOpts {
+  lockedPocketIndices?: Set<number>
+  wallRestitution?: number
+  frictionOverride?: number
+}
+
+export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOpts) {
+  const frictionBase = opts?.frictionOverride ?? FRICTION
+  const friction = Math.pow(frictionBase, dt * 60)
+  const wallRestitution = opts?.wallRestitution ?? 0.75
   const maxX = TABLE_WIDTH / 2 - BALL_RADIUS
   const maxZ = TABLE_LENGTH / 2 - BALL_RADIUS
   const diam = BALL_RADIUS * 2
@@ -44,7 +52,7 @@ export function stepPhysics(balls: BallState[], dt: number, lockedPocketIndices?
 
   for (const b of active) {
     for (let i = 0; i < POCKET_XZ.length; i++) {
-      if (lockedPocketIndices?.has(i)) continue
+      if (opts?.lockedPocketIndices?.has(i)) continue
       const [px, pz] = POCKET_XZ[i]
       if (Math.hypot(b.mesh.position.x - px, b.mesh.position.z - pz) < POCKET_RADIUS * 1.4) {
         b.active = false
@@ -56,10 +64,10 @@ export function stepPhysics(balls: BallState[], dt: number, lockedPocketIndices?
 
   for (const b of balls) {
     if (!b.active) continue
-    if (b.mesh.position.x > maxX) { b.mesh.position.x = maxX; b.vx = -Math.abs(b.vx) * 0.75 }
-    if (b.mesh.position.x < -maxX) { b.mesh.position.x = -maxX; b.vx = Math.abs(b.vx) * 0.75 }
-    if (b.mesh.position.z > maxZ) { b.mesh.position.z = maxZ; b.vz = -Math.abs(b.vz) * 0.75 }
-    if (b.mesh.position.z < -maxZ) { b.mesh.position.z = -maxZ; b.vz = Math.abs(b.vz) * 0.75 }
+    if (b.mesh.position.x > maxX) { b.mesh.position.x = maxX; b.vx = -Math.abs(b.vx) * wallRestitution }
+    if (b.mesh.position.x < -maxX) { b.mesh.position.x = -maxX; b.vx = Math.abs(b.vx) * wallRestitution }
+    if (b.mesh.position.z > maxZ) { b.mesh.position.z = maxZ; b.vz = -Math.abs(b.vz) * wallRestitution }
+    if (b.mesh.position.z < -maxZ) { b.mesh.position.z = -maxZ; b.vz = Math.abs(b.vz) * wallRestitution }
   }
 }
 
