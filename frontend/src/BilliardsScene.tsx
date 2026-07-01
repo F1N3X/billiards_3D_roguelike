@@ -199,107 +199,139 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
 
     const keys = new Set<string>()
 
+    const raycaster = new THREE.Raycaster()
+    const tablePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -CUE_Y)
+    const intersection = new THREE.Vector3()
+
+    function fireShot() {
+      const cb = ballStates[0]
+      if (!cb.active || state.phase !== 'aiming') return
+
+      state.activeBeforeShot = ballStates.slice(1).filter(b => b.active).length
+      state.shotOrigin.copy(cb.mesh.position)
+
+      const dx  = Math.cos(state.aimAngle)
+      const dz  = Math.sin(state.aimAngle)
+      const px  = -dz
+      const pz  =  dx
+      const effects = activeEffectsRef.current
+
+      // ── Main spawns: tripleShot / tripleTriangle applied to original aim ──
+      let mainSpawns: Array<{ ox: number; oz: number; da: number }> = [{ ox: 0, oz: 0, da: 0 }]
+
+      if (effects.has('tripleShot')) {
+        mainSpawns = mainSpawns.flatMap(s => [
+          s,
+          { ...s, ox: s.ox - dx * SPAWN_GAP,     oz: s.oz - dz * SPAWN_GAP     },
+          { ...s, ox: s.ox - dx * SPAWN_GAP * 2,  oz: s.oz - dz * SPAWN_GAP * 2 },
+        ])
+      }
+
+      if (effects.has('tripleTriangle')) {
+        mainSpawns = mainSpawns.flatMap(s => [
+          s,
+          { ...s, ox: s.ox - dx * SPAWN_GAP + px * SPAWN_GAP, oz: s.oz - dz * SPAWN_GAP + pz * SPAWN_GAP },
+          { ...s, ox: s.ox - dx * SPAWN_GAP - px * SPAWN_GAP, oz: s.oz - dz * SPAWN_GAP - pz * SPAWN_GAP },
+        ])
+      }
+
+      cb.vx = dx * SHOT_POWER
+      cb.vz = dz * SHOT_POWER
+      state.phase = 'rolling'
+      state.shotAnim = 0
+      onRollingChangeRef.current?.(true)
+
+      const originX = cb.mesh.position.x
+      const originZ = cb.mesh.position.z
+      for (let i = 1; i < mainSpawns.length; i++) {
+        const { ox, oz, da } = mainSpawns[i]
+        const angle = state.aimAngle + da
+        state.extraCueBalls.push(makeExtraCueBall(
+          scene, originX + ox, CUE_Y, originZ + oz,
+          Math.cos(angle) * SHOT_POWER, Math.sin(angle) * SHOT_POWER,
+        ))
+      }
+
+      // ── Clone spawns ─────────────────────────────────────────────────────────
+      if (effects.has('clone') && state.cloneData) {
+        for (let c = 0; c < state.cloneData.positions.length; c++) {
+          const [cx, cz] = state.cloneData.positions[c]
+          const cAngle = state.aimAngle + state.cloneData.angles[c]
+          const cdx = Math.cos(cAngle)
+          const cdz = Math.sin(cAngle)
+          const cpx = -cdz
+          const cpz =  cdx
+
+          let cloneSpawns: Array<{ ox: number; oz: number; da: number }> = [{ ox: 0, oz: 0, da: 0 }]
+
+          if (effects.has('tripleShot')) {
+            cloneSpawns = cloneSpawns.flatMap(s => [
+              s,
+              { ...s, ox: s.ox - cdx * SPAWN_GAP,     oz: s.oz - cdz * SPAWN_GAP     },
+              { ...s, ox: s.ox - cdx * SPAWN_GAP * 2,  oz: s.oz - cdz * SPAWN_GAP * 2 },
+            ])
+          }
+
+          if (effects.has('tripleTriangle')) {
+            cloneSpawns = cloneSpawns.flatMap(s => [
+              s,
+              { ...s, ox: s.ox - cdx * SPAWN_GAP + cpx * SPAWN_GAP, oz: s.oz - cdz * SPAWN_GAP + cpz * SPAWN_GAP },
+              { ...s, ox: s.ox - cdx * SPAWN_GAP - cpx * SPAWN_GAP, oz: s.oz - cdz * SPAWN_GAP - cpz * SPAWN_GAP },
+            ])
+          }
+
+          for (const { ox, oz, da } of cloneSpawns) {
+            const angle = cAngle + da
+            state.extraCueBalls.push(makeExtraCueBall(
+              scene, cx + ox, CUE_Y, cz + oz,
+              Math.cos(angle) * SHOT_POWER, Math.sin(angle) * SHOT_POWER,
+            ))
+          }
+        }
+        state.cloneData = null
+      }
+
+      hideGhosts()
+    }
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'ArrowRight', 'a', 'd', 'Enter', ' '].includes(e.key)) e.preventDefault()
       keys.add(e.key)
-
-      if ((e.key === 'Enter' || e.key === ' ') && state.phase === 'aiming') {
-        const cb = ballStates[0]
-        if (!cb.active) return
-
-        state.activeBeforeShot = ballStates.slice(1).filter(b => b.active).length
-        state.shotOrigin.copy(cb.mesh.position)
-
-        const dx  = Math.cos(state.aimAngle)
-        const dz  = Math.sin(state.aimAngle)
-        const px  = -dz
-        const pz  =  dx
-        const effects = activeEffectsRef.current
-
-        // ── Main spawns: tripleShot / tripleTriangle applied to original aim ──
-        let mainSpawns: Array<{ ox: number; oz: number; da: number }> = [{ ox: 0, oz: 0, da: 0 }]
-
-        if (effects.has('tripleShot')) {
-          mainSpawns = mainSpawns.flatMap(s => [
-            s,
-            { ...s, ox: s.ox - dx * SPAWN_GAP,     oz: s.oz - dz * SPAWN_GAP     },
-            { ...s, ox: s.ox - dx * SPAWN_GAP * 2,  oz: s.oz - dz * SPAWN_GAP * 2 },
-          ])
-        }
-
-        if (effects.has('tripleTriangle')) {
-          mainSpawns = mainSpawns.flatMap(s => [
-            s,
-            { ...s, ox: s.ox - dx * SPAWN_GAP + px * SPAWN_GAP, oz: s.oz - dz * SPAWN_GAP + pz * SPAWN_GAP },
-            { ...s, ox: s.ox - dx * SPAWN_GAP - px * SPAWN_GAP, oz: s.oz - dz * SPAWN_GAP - pz * SPAWN_GAP },
-          ])
-        }
-
-        // Fire original ball
-        cb.vx = dx * SHOT_POWER
-        cb.vz = dz * SHOT_POWER
-        state.phase = 'rolling'
-        state.shotAnim = 0
-        onRollingChangeRef.current?.(true)
-
-        // Extra balls from main spawns
-        const originX = cb.mesh.position.x
-        const originZ = cb.mesh.position.z
-        for (let i = 1; i < mainSpawns.length; i++) {
-          const { ox, oz, da } = mainSpawns[i]
-          const angle = state.aimAngle + da
-          state.extraCueBalls.push(makeExtraCueBall(
-            scene, originX + ox, CUE_Y, originZ + oz,
-            Math.cos(angle) * SHOT_POWER, Math.sin(angle) * SHOT_POWER,
-          ))
-        }
-
-        // ── Clone spawns: each at its random position/angle ──────────────────
-        // tripleShot / tripleTriangle also apply to each clone's own direction
-        if (effects.has('clone') && state.cloneData) {
-          for (let c = 0; c < state.cloneData.positions.length; c++) {
-            const [cx, cz] = state.cloneData.positions[c]
-            const cAngle = state.aimAngle + state.cloneData.angles[c]
-            const cdx = Math.cos(cAngle)
-            const cdz = Math.sin(cAngle)
-            const cpx = -cdz
-            const cpz =  cdx
-
-            let cloneSpawns: Array<{ ox: number; oz: number; da: number }> = [{ ox: 0, oz: 0, da: 0 }]
-
-            if (effects.has('tripleShot')) {
-              cloneSpawns = cloneSpawns.flatMap(s => [
-                s,
-                { ...s, ox: s.ox - cdx * SPAWN_GAP,     oz: s.oz - cdz * SPAWN_GAP     },
-                { ...s, ox: s.ox - cdx * SPAWN_GAP * 2,  oz: s.oz - cdz * SPAWN_GAP * 2 },
-              ])
-            }
-
-            if (effects.has('tripleTriangle')) {
-              cloneSpawns = cloneSpawns.flatMap(s => [
-                s,
-                { ...s, ox: s.ox - cdx * SPAWN_GAP + cpx * SPAWN_GAP, oz: s.oz - cdz * SPAWN_GAP + cpz * SPAWN_GAP },
-                { ...s, ox: s.ox - cdx * SPAWN_GAP - cpx * SPAWN_GAP, oz: s.oz - cdz * SPAWN_GAP - cpz * SPAWN_GAP },
-              ])
-            }
-
-            for (const { ox, oz, da } of cloneSpawns) {
-              const angle = cAngle + da
-              state.extraCueBalls.push(makeExtraCueBall(
-                scene, cx + ox, CUE_Y, cz + oz,
-                Math.cos(angle) * SHOT_POWER, Math.sin(angle) * SHOT_POWER,
-              ))
-            }
-          }
-          state.cloneData = null
-        }
-
-        hideGhosts()
-      }
+      if (e.key === 'Enter' || e.key === ' ') fireShot()
     }
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.key)
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (state.phase !== 'aiming') return
+      const cb = ballStates[0]
+      if (!cb.active) return
+      const rect = mount.getBoundingClientRect()
+      const ndcX =  ((e.clientX - rect.left) / rect.width)  * 2 - 1
+      const ndcY = -((e.clientY - rect.top)  / rect.height) * 2 + 1
+      raycaster.setFromCamera({ x: ndcX, y: ndcY }, camera)
+      if (raycaster.ray.intersectPlane(tablePlane, intersection)) {
+        const dx = intersection.x - cb.mesh.position.x
+        const dz = intersection.z - cb.mesh.position.z
+        if (Math.hypot(dx, dz) > 0.01) state.aimAngle = Math.atan2(dz, dx)
+      }
+    }
+
+    let mouseDownX = 0, mouseDownY = 0
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return
+      mouseDownX = e.clientX
+      mouseDownY = e.clientY
+    }
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button !== 0) return
+      if (Math.hypot(e.clientX - mouseDownX, e.clientY - mouseDownY) < 6) fireShot()
+    }
+
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+    mount.addEventListener('mousemove', onMouseMove)
+    mount.addEventListener('mousedown', onMouseDown)
+    mount.addEventListener('mouseup', onMouseUp)
 
     const clock = new THREE.Clock()
 
@@ -426,6 +458,9 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       window.removeEventListener('resize', onResize)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
+      mount.removeEventListener('mousemove', onMouseMove)
+      mount.removeEventListener('mousedown', onMouseDown)
+      mount.removeEventListener('mouseup', onMouseUp)
       cleanupExtraCueBalls()
       for (const m of [...ghostBalls, ...ghostCues, ...ghostAimLines]) scene.remove(m)
       ghostBallMat.dispose()
