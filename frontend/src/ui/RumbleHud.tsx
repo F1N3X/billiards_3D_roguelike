@@ -38,7 +38,6 @@ export function RumbleHud({ currency, hand, activeEffects, isRolling, isDev, onT
               title={isActive ? 'Cliquer pour annuler' : powerUp.description}
             >
               {isActive && <div className={styles.activeTag}>✕ ACTIF</div>}
-              <div className={styles.cardIcon}>{powerUp.icon}</div>
               <div className={styles.cardName}>{powerUp.name}</div>
               <div className={styles.cardDesc}>{powerUp.description}</div>
               <div className={styles.cardCost}>

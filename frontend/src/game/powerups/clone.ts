@@ -5,6 +5,5 @@ export const clone: PowerUp = {
   name: 'Clone',
   description: '4 boules fantômes, chacune avec sa propre queue',
   cost: 5,
-  icon: '✦',
   createBuff: () => ({ effect: 'clone' }),
 }

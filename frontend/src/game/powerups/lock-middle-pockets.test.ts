@@ -18,7 +18,5 @@ describe('lockMiddlePockets', () => {
     expect(lockMiddlePockets.createBuff()).not.toBe(lockMiddlePockets.createBuff())
   })
 
-  it('a une icône non vide', () => {
-    expect(lockMiddlePockets.icon.length).toBeGreaterThan(0)
-  })
+
 })

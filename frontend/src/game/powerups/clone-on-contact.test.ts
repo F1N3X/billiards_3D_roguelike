@@ -18,9 +18,6 @@ describe('cloneOnContact', () => {
     expect(cloneOnContact.createBuff()).not.toBe(cloneOnContact.createBuff())
   })
 
-  it('a une icône non vide', () => {
-    expect(cloneOnContact.icon.length).toBeGreaterThan(0)
-  })
 
   it('a une description non vide', () => {
     expect(cloneOnContact.description.length).toBeGreaterThan(0)

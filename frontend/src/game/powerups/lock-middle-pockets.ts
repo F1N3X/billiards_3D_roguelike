@@ -5,6 +5,5 @@ export const lockMiddlePockets: PowerUp = {
   name: 'Milieux Verrouillés',
   description: 'Bloque les 2 trous du milieu pour ce tour',
   cost: 2,
-  icon: '⬜',
   createBuff: () => ({ effect: 'lockMiddlePockets' }),
 }

@@ -23,7 +23,5 @@ describe('clone', () => {
     expect(clone.createBuff()).not.toBe(clone.createBuff())
   })
 
-  it('a un icon non vide', () => {
-    expect(clone.icon.length).toBeGreaterThan(0)
-  })
+
 })

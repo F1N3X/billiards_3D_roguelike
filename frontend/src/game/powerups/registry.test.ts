@@ -21,9 +21,5 @@ describe('PowerUpRegistry', () => {
     expect(() => PowerUpRegistry.get('inexistant')).toThrow('[PowerUpRegistry]')
   })
 
-  it('chaque power-up a un icon non vide', () => {
-    for (const pu of PowerUpRegistry.all()) {
-      expect(pu.icon.length).toBeGreaterThan(0)
-    }
-  })
+
 })

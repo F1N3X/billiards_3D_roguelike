@@ -11,6 +11,5 @@ export interface PowerUp {
   readonly name: string
   readonly description: string
   readonly cost: number
-  readonly icon: string
   createBuff(): Buff
 }

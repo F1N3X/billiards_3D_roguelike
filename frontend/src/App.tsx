@@ -205,7 +205,7 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
 
   const handleShotResolved = (ballsPotted: number, scratch: boolean, isVictory: boolean) => {
     setActiveEffects(new Set())
-    setCurrency(c => c + RUMBLE_CURRENCY_PER_TURN)
+    setCurrency(c => c + RUMBLE_CURRENCY_PER_TURN + ballsPotted)
     setHand(drawHand())
     dispatch({ type: 'shot_resolved', ballsPotted, scratch, isVictory })
   }

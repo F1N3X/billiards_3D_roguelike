@@ -5,6 +5,5 @@ export const tripleShot: PowerUp = {
   name: 'Triple Tir',
   description: '3 boules blanches en ligne derrière le tir',
   cost: 3,
-  icon: '⇒⇒⇒',
   createBuff: () => ({ effect: 'tripleShot' }),
 }

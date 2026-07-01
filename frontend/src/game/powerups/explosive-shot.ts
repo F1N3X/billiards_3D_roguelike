@@ -5,6 +5,5 @@ export const explosiveShot: PowerUp = {
   name: 'Tir Explosif',
   description: 'La première boule touchée provoque une explosion qui écarte toutes les boules proches',
   cost: 4,
-  icon: '✸',
   createBuff: () => ({ effect: 'explosiveShot' }),
 }

@@ -18,7 +18,5 @@ describe('explosiveShot', () => {
     expect(explosiveShot.createBuff()).not.toBe(explosiveShot.createBuff())
   })
 
-  it('a une icône non vide', () => {
-    expect(explosiveShot.icon.length).toBeGreaterThan(0)
-  })
+
 })

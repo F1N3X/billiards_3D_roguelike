@@ -18,7 +18,5 @@ describe('lockCornerPockets', () => {
     expect(lockCornerPockets.createBuff()).not.toBe(lockCornerPockets.createBuff())
   })
 
-  it('a une icône non vide', () => {
-    expect(lockCornerPockets.icon.length).toBeGreaterThan(0)
-  })
+
 })

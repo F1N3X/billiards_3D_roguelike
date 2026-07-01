@@ -5,6 +5,5 @@ export const cloneOnContact: PowerUp = {
   name: 'Clonage au contact',
   description: 'Chaque boule touchée par la blanche génère un clone sur la table',
   cost: 3,
-  icon: '⬡',
   createBuff: () => ({ effect: 'cloneOnContact' }),
 }
