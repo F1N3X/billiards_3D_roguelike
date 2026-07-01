@@ -35,10 +35,10 @@ export function updatePseudo(userId: string, pseudo: string): Promise<AuthUser> 
   })
 }
 
-export function saveGameHistory(userId: string, score: number, shots: number): Promise<void> {
+export function saveGameHistory(userId: string, gameMode: GameMode, score: number, shots: number): Promise<void> {
   return request<void>('/game-history', {
     method: 'POST',
-    body: JSON.stringify({ userId, gameMode: 'classic', score, shots }),
+    body: JSON.stringify({ userId, gameMode, score, shots }),
   })
 }
 

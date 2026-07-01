@@ -80,6 +80,43 @@
   padding: 2px 6px;
 }
 
+.rumbleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #5c1a8a, #8a2cc8);
+  border: none;
+  border-radius: 12px;
+  color: #f0d8ff;
+  font-family: 'Georgia', serif;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  padding: 13px 28px;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 4px 18px rgba(130, 40, 190, 0.45);
+}
+
+.rumbleButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 26px rgba(130, 40, 190, 0.65);
+}
+
+.rumbleButton:active {
+  transform: translateY(0);
+}
+
+.rumbleBadge {
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
 .secondaryButton {
   background: transparent;
   border: 1px solid rgba(255, 210, 80, 0.35);

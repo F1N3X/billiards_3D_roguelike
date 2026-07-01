@@ -82,6 +82,22 @@ Le Dockerfile backend est multi-stage (builder `node:20-alpine` → production `
 
 ---
 
+## 2026-07-01 — Mode Rumble : architecture des power-ups
+
+**Décision :** Le mode Rumble est un mode de jeu séparé (`RumbleGameScreen`) qui réutilise `BilliardsScene` sans le modifier en profondeur. Les effets actifs (`activeEffects: Set<ActiveEffect>`) sont passés en prop à `BilliardsScene` et lus via un ref à l'intérieur de la boucle Three.js (même pattern que `callbackRef`), sans re-monter la scène.
+
+**Économie des pièces :** La monnaie commence à 1 et gagne +1 après chaque coup. Elle est dépensée en cliquant sur un bonus dans la main. Les effets sont effacés après chaque coup (usage unique par tir). La main de 4 slots reste fixe ; les slots sans bonus disponible affichent un placeholder "Bientôt".
+
+**Triple Tir — coût 2 :** Quand activé, `BilliardsScene` fire 3 boules blanches successives avec le même angle depuis la même origine. L'état interne `tripleShot.remaining` décompte les tirs restants ; `onShotResolved` n'est appelé qu'une fois, après le 3e tir, avec le total des boules empochées.
+
+**Pourquoi pas de refacto de `BilliardsScene` :** La scène est un moteur Three.js impératif dans un `useEffect`. Introduire un prop ref permet de partager l'état React avec la boucle de jeu sans re-mount coûteux ni `useImperativeHandle`.
+
+**Pas de sauvegarde backend pour Rumble :** Le backend ne supporte pas encore le mode rumble (pas de `gameMode` dans `GameHistory`). Le score s'affiche mais n'est pas persisté.
+
+**Alternatives rejetées :** Event bus / context pour les effets (complexité inutile pour 1 effet) ; modifier `stepPhysics` pour gérer le triple tir (mélange physique et logique de gameplay).
+
+---
+
 ## 2026-06-30 — Sauvegarde automatique de la partie en fin de jeu (mode classique)
 
 **Décision :** Quand un joueur connecté remporte une partie en mode classique, l'`App.tsx` déclenche automatiquement `POST /game-history` avec `userId`, `score` et `shots`. Le statut de sauvegarde (`saving` / `saved` / `error`) est affiché dans `VictoryScreen`.

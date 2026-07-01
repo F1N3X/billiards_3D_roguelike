@@ -37,6 +37,8 @@ export const BALL_COLORS = [
 
 export const INITIAL_AIM_ANGLE = 0
 
+export const CLONE_COUNT = 4
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 
 export const SCORE_PER_BALL = 100

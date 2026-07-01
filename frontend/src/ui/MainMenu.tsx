@@ -6,15 +6,16 @@ import type { LeaderboardEntry, GameMode } from '../types/game'
 import { GAME_MODE_LABELS } from '../types/game'
 import styles from './MainMenu.module.css'
 
-const GAME_MODES: GameMode[] = ['classic']
+const GAME_MODES: GameMode[] = ['classic', 'rumble']
 
 interface Props {
   onPlay: () => void
+  onPlayRumble: () => void
   onLogin: () => void
   onAccount: () => void
 }
 
-export function MainMenu({ onPlay, onLogin, onAccount }: Props) {
+export function MainMenu({ onPlay, onPlayRumble, onLogin, onAccount }: Props) {
   const { user, signOut } = useAuth()
   const [leaderboards, setLeaderboards] = useState<Partial<Record<GameMode, LeaderboardEntry[]>>>({})
   const [loadingModes, setLoadingModes] = useState<Set<GameMode>>(new Set(GAME_MODES))
@@ -48,6 +49,11 @@ export function MainMenu({ onPlay, onLogin, onAccount }: Props) {
           <button className={styles.primaryButton} onClick={onPlay}>
             Mode Classique
             <span className={styles.hint}>Entrée</span>
+          </button>
+
+          <button className={styles.rumbleButton} onClick={onPlayRumble}>
+            Mode Rumble
+            <span className={styles.rumbleBadge}>NEW</span>
           </button>
 
           {user ? (

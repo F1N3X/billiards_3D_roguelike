@@ -1,7 +1,8 @@
-export type GameMode = 'classic'
+export type GameMode = 'classic' | 'rumble'
 
 export const GAME_MODE_LABELS: Record<GameMode, string> = {
   classic: 'Mode Classique',
+  rumble: 'Mode Rumble',
 }
 
 export interface LeaderboardEntry {

@@ -1,0 +1,196 @@
+.hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px 16px;
+  background: linear-gradient(to top, rgba(8, 6, 4, 0.92) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ── Rolling hint ── */
+
+.rollingHint {
+  font-family: 'Georgia', serif;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 120, 0.4);
+  margin-bottom: -4px;
+}
+
+/* ── Currency ── */
+
+.currency {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(20, 14, 4, 0.85);
+  border: 1px solid rgba(255, 210, 80, 0.4);
+  border-radius: 20px;
+  padding: 4px 14px;
+  pointer-events: none;
+}
+
+.coinIcon {
+  font-size: 14px;
+  color: #ffd97a;
+  line-height: 1;
+}
+
+.coinValue {
+  font-family: 'Georgia', serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd97a;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1;
+}
+
+.coinLabel {
+  font-family: 'Georgia', serif;
+  font-size: 11px;
+  color: rgba(255, 210, 120, 0.55);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Hand ── */
+
+.hand {
+  display: flex;
+  gap: 10px;
+  pointer-events: all;
+}
+
+/* ── Card (active power-up) ── */
+
+.card {
+  position: relative;
+  width: 130px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(14, 10, 4, 0.88);
+  border: 1px solid rgba(255, 210, 80, 0.35);
+  border-radius: 10px;
+  padding: 10px 10px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  text-align: center;
+}
+
+.card:hover:not(:disabled) {
+  border-color: rgba(255, 210, 80, 0.75);
+  box-shadow: 0 0 14px rgba(255, 210, 80, 0.3);
+  transform: translateY(-3px);
+}
+
+.card:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.card:disabled {
+  cursor: default;
+}
+
+.cardIcon {
+  font-size: 20px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.cardName {
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffd97a;
+  letter-spacing: 0.04em;
+}
+
+.cardDesc {
+  font-family: 'Georgia', serif;
+  font-size: 10px;
+  color: rgba(255, 210, 120, 0.6);
+  line-height: 1.3;
+}
+
+.cardCost {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffd97a;
+  margin-top: 4px;
+}
+
+.coinSmall {
+  font-size: 11px;
+  color: #ffd97a;
+}
+
+/* ── Active state ── */
+
+.cardActive {
+  border-color: #ffd97a;
+  box-shadow: 0 0 18px rgba(255, 210, 80, 0.55), inset 0 0 12px rgba(255, 210, 80, 0.08);
+}
+
+.activeTag {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #c8920a;
+  color: #1a0e00;
+  font-family: 'Georgia', serif;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* ── Disabled state ── */
+
+.cardDisabled {
+  opacity: 0.38;
+}
+
+/* ── Locked slot ── */
+
+.cardLocked {
+  width: 130px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(14, 10, 4, 0.5);
+  border: 1px dashed rgba(255, 210, 80, 0.15);
+  border-radius: 10px;
+}
+
+.lockIcon {
+  font-size: 22px;
+  color: rgba(255, 210, 80, 0.2);
+}
+
+.lockText {
+  font-family: 'Georgia', serif;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 120, 0.2);
+}
