@@ -11,6 +11,8 @@ import { bouncyWalls } from './bouncy-walls'
 import { slipperyFelt } from './slippery-felt'
 import { stickyFelt } from './sticky-felt'
 import { magneticCue } from './magnetic-cue'
+import { curveLeft } from './curve-left'
+import { curveRight } from './curve-right'
 
 const REGISTRY = new Map<PowerUpId, PowerUp>([
   ['triple_shot', tripleShot],
@@ -25,6 +27,8 @@ const REGISTRY = new Map<PowerUpId, PowerUp>([
   ['slippery_felt', slipperyFelt],
   ['sticky_felt', stickyFelt],
   ['magnetic_cue', magneticCue],
+  ['curve_left', curveLeft],
+  ['curve_right', curveRight],
 ])
 
 export const PowerUpRegistry = {

@@ -7,7 +7,7 @@ describe('slipperyFelt', () => {
   })
 
   it('coûte 2 pièces', () => {
-    expect(slipperyFelt.cost).toBe(2)
+    expect(slipperyFelt.cost).toBe(1)
   })
 
   it('crée un buff slipperyFelt', () => {

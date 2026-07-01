@@ -7,7 +7,7 @@ describe('clone', () => {
   })
 
   it('coûte 5 pièces', () => {
-    expect(clone.cost).toBe(5)
+    expect(clone.cost).toBe(6)
   })
 
   it('coûte plus cher que tripleTriangle', async () => {

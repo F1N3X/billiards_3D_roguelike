@@ -4,11 +4,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import {
   TABLE_WIDTH, TABLE_HEIGHT, TABLE_LENGTH, BALL_RADIUS,
   CUE_COLOR, CUE_LENGTH,
-  SHOT_POWER, AIM_SPEED, INITIAL_AIM_ANGLE,
+  SHOT_POWER, AIM_SPEED, INITIAL_AIM_ANGLE, MIN_SPEED,
   POCKET_XZ, POCKET_RADIUS,
   CLONE_COUNT,
   EXPLOSION_RADIUS, EXPLOSION_FORCE,
   SEISME_IMPULSE_PER_SEC, SEISME_DURATION,
+  CURVE_FORCE, CURVE_PREVIEW_POINTS,
   BOUNCY_WALLS_RESTITUTION,
   SLIPPERY_FRICTION,
   STICKY_FRICTION,
@@ -57,6 +58,26 @@ function tryPlaceClone(
     if (clearOfBalls && clearOfClones && clearOfPockets) return [x, z]
   }
   return null
+}
+
+function buildCurveAimPositions(
+  startX: number, startZ: number, y: number,
+  aimAngle: number, sign: number,
+): Float32Array {
+  const R = SHOT_POWER / CURVE_FORCE
+  const arcSpan = Math.PI / 2
+  const pts = new Float32Array(CURVE_PREVIEW_POINTS * 3)
+  const cx = startX - Math.sin(aimAngle) * sign * R
+  const cz = startZ + Math.cos(aimAngle) * sign * R
+  const startAngle = aimAngle - sign * Math.PI / 2
+  for (let i = 0; i < CURVE_PREVIEW_POINTS; i++) {
+    const t = i / (CURVE_PREVIEW_POINTS - 1)
+    const a = startAngle + sign * t * arcSpan
+    pts[i * 3]     = cx + Math.cos(a) * R
+    pts[i * 3 + 1] = y
+    pts[i * 3 + 2] = cz + Math.sin(a) * R
+  }
+  return pts
 }
 
 function buildLockedPocketIndices(effects: Set<BuffEffect>): Set<number> | undefined {
@@ -206,6 +227,13 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.3, transparent: true }),
     )
     scene.add(aimLine)
+
+    const curveAimGeo = new THREE.BufferGeometry()
+    curveAimGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(CURVE_PREVIEW_POINTS * 3), 3))
+    const curveAimMat = new THREE.LineBasicMaterial({ color: 0xffaa44, opacity: 0.5, transparent: true })
+    const curveAimLine = new THREE.Line(curveAimGeo, curveAimMat)
+    curveAimLine.visible = false
+    scene.add(curveAimLine)
 
     // ── Clone ghost objects (hidden by default) ──────────────────────────────
     const ghostBallMat = new THREE.MeshStandardMaterial({
@@ -420,17 +448,35 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
         if (keys.has('ArrowRight') || keys.has('d')) state.aimAngle += AIM_SPEED * dt
 
         if (cb.active) {
+          const curveEffect = activeEffectsRef.current.has('curveLeft') ? 'curveLeft'
+            : activeEffectsRef.current.has('curveRight') ? 'curveRight'
+            : null
           cue.visible = true
-          aimLine.visible = true
           positionCue(cue, cb.mesh.position, state.aimAngle, 0)
-          updateAimLine(
-            aimLine,
-            new THREE.Vector3(cb.mesh.position.x, CUE_Y + 0.002, cb.mesh.position.z),
-            state.aimAngle,
-          )
+          if (curveEffect) {
+            aimLine.visible = false
+            curveAimLine.visible = true
+            const sign = curveEffect === 'curveLeft' ? 1 : -1
+            const pts = buildCurveAimPositions(
+              cb.mesh.position.x, cb.mesh.position.z, CUE_Y + 0.002,
+              state.aimAngle, sign,
+            )
+            const pos = curveAimGeo.attributes.position as THREE.BufferAttribute
+            pos.array.set(pts)
+            pos.needsUpdate = true
+          } else {
+            aimLine.visible = true
+            curveAimLine.visible = false
+            updateAimLine(
+              aimLine,
+              new THREE.Vector3(cb.mesh.position.x, CUE_Y + 0.002, cb.mesh.position.z),
+              state.aimAngle,
+            )
+          }
         } else {
           cue.visible = false
           aimLine.visible = false
+          curveAimLine.visible = false
         }
 
         // ── Clone ghost visualization ─────────────────────────────────────────
@@ -467,6 +513,18 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
         const effects = activeEffectsRef.current
         const physicsOpts = buildStepPhysicsOpts(effects)
 
+        if (effects.has('curveLeft') || effects.has('curveRight')) {
+          const sign = effects.has('curveLeft') ? 1 : -1
+          const cueBalls = [ballStates[0], ...state.extraCueBalls].filter(b => b.active)
+          for (const cb of cueBalls) {
+            const ovx = cb.vx
+            cb.vx += (-cb.vz) * sign * CURVE_FORCE * dt
+            cb.vz += ( ovx)   * sign * CURVE_FORCE * dt
+          }
+        }
+
+        stepPhysics([...ballStates, ...state.extraCueBalls], dt, physicsOpts)
+
         if (effects.has('magneticCue')) {
           const cueBalls = [ballStates[0], ...state.extraCueBalls].filter(b => b.active)
           for (const colored of ballStates.slice(1)) {
@@ -491,8 +549,6 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
             }
           }
         }
-
-        stepPhysics([...ballStates, ...state.extraCueBalls], dt, physicsOpts)
 
         if (state.seismeRemaining > 0) {
           for (const ball of ballStates.slice(1)) {
@@ -574,11 +630,13 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
           cue.visible = false
         }
         aimLine.visible = false
+        curveAimLine.visible = false
 
         const allBalls = [...ballStates, ...state.extraCueBalls]
-        const allStopped = allBalls.filter(b => b.active).every(b => b.vx === 0 && b.vz === 0)
+        const allStopped = allBalls.filter(b => b.active).every(b => Math.hypot(b.vx, b.vz) < MIN_SPEED)
 
         if (allStopped) {
+          allBalls.forEach(b => { b.vx = 0; b.vz = 0 })
           const coloredNow = ballStates.slice(1).filter(b => b.active).length
           const ballsPotted = state.activeBeforeShot - coloredNow
 
@@ -604,6 +662,7 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
             state.phase = 'victory'
             cue.visible = false
             aimLine.visible = false
+            curveAimLine.visible = false
             controls.autoRotate = true
             controls.autoRotateSpeed = 10
             onRollingChangeRef.current?.(false)
@@ -667,6 +726,8 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       ghostAimMat.dispose()
       cornerLockMat.dispose()
       middleLockMat.dispose()
+      curveAimGeo.dispose()
+      curveAimMat.dispose()
       controls.dispose()
       renderer.dispose()
       mount.removeChild(renderer.domElement)

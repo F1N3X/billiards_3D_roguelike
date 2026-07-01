@@ -7,7 +7,7 @@ describe('lockMiddlePockets', () => {
   })
 
   it('coûte 2 pièces', () => {
-    expect(lockMiddlePockets.cost).toBe(2)
+    expect(lockMiddlePockets.cost).toBe(1)
   })
 
   it('crée un buff lockMiddlePockets', () => {

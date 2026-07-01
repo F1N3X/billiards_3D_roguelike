@@ -7,7 +7,7 @@ describe('seisme', () => {
   })
 
   it('coûte 3 pièces', () => {
-    expect(seisme.cost).toBe(3)
+    expect(seisme.cost).toBe(2)
   })
 
   it('crée un buff seisme', () => {

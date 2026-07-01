@@ -7,7 +7,7 @@ describe('tripleTriangle', () => {
   })
 
   it('coûte 4 pièces', () => {
-    expect(tripleTriangle.cost).toBe(4)
+    expect(tripleTriangle.cost).toBe(5)
   })
 
   it('crée un buff tripleTriangle', () => {

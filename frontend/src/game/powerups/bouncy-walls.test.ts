@@ -7,7 +7,7 @@ describe('bouncyWalls', () => {
   })
 
   it('coûte 3 pièces', () => {
-    expect(bouncyWalls.cost).toBe(3)
+    expect(bouncyWalls.cost).toBe(2)
   })
 
   it('crée un buff bouncyWalls', () => {

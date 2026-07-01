@@ -10,7 +10,7 @@ export const POCKET_RADIUS = 0.13
 export const CUE_LENGTH = 2.5
 export const CUE_TIP_GAP = 0.05
 export const SHOT_POWER = 6.0
-export const FRICTION = 0.984
+export const FRICTION = 0.978
 export const MIN_SPEED = 0.025
 export const AIM_SPEED = 2.2
 
@@ -44,11 +44,14 @@ export const EXPLOSION_FORCE = 10.0
 
 export const SEISME_IMPULSE_PER_SEC = 3.5
 export const SEISME_DURATION = 2.5
-export const BOUNCY_WALLS_RESTITUTION = 1.5
-export const SLIPPERY_FRICTION = 0.997
-export const STICKY_FRICTION = 0.965
-export const MAGNET_FORCE = 0.8
-export const MAGNET_RADIUS = 0.9
+export const BOUNCY_WALLS_RESTITUTION = 1.3
+export const SLIPPERY_FRICTION = 0.993
+export const STICKY_FRICTION = 0.958
+export const MAX_BALL_SPEED = 8.0
+export const CURVE_FORCE = 3.5
+export const CURVE_PREVIEW_POINTS = 60
+export const MAGNET_FORCE = 4.0
+export const MAGNET_RADIUS = 1.2
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 

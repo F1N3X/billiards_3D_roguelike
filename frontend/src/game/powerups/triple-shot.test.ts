@@ -7,7 +7,7 @@ describe('tripleShot', () => {
   })
 
   it('coûte 3 pièces', () => {
-    expect(tripleShot.cost).toBe(3)
+    expect(tripleShot.cost).toBe(4)
   })
 
   it('crée un buff tripleShot', () => {

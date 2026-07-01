@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import {
-  FRICTION, MIN_SPEED, TABLE_WIDTH, TABLE_LENGTH, BALL_RADIUS,
+  FRICTION, MIN_SPEED, MAX_BALL_SPEED, TABLE_WIDTH, TABLE_LENGTH, BALL_RADIUS,
   POCKET_XZ, POCKET_RADIUS, CUE_TIP_GAP, CUE_LENGTH,
 } from '../config/constants'
 import type { BallState } from '../types/billiards'
@@ -68,6 +68,8 @@ export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOp
     if (b.mesh.position.x < -maxX) { b.mesh.position.x = -maxX; b.vx = Math.abs(b.vx) * wallRestitution }
     if (b.mesh.position.z > maxZ) { b.mesh.position.z = maxZ; b.vz = -Math.abs(b.vz) * wallRestitution }
     if (b.mesh.position.z < -maxZ) { b.mesh.position.z = -maxZ; b.vz = Math.abs(b.vz) * wallRestitution }
+    const spd = Math.hypot(b.vx, b.vz)
+    if (spd > MAX_BALL_SPEED) { const f = MAX_BALL_SPEED / spd; b.vx *= f; b.vz *= f }
   }
 }
 

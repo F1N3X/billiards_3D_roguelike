@@ -4,6 +4,6 @@ export const seisme: PowerUp = {
   id: 'seisme',
   name: 'Séisme',
   description: 'Au tir, toutes les boules colorées reçoivent une impulsion aléatoire',
-  cost: 3,
+  cost: 2,
   createBuff: () => ({ effect: 'seisme' }),
 }
