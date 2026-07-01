@@ -47,7 +47,7 @@ function renderWithUser(ui: React.ReactElement, user: AuthUser | null = null) {
   }
 }
 
-const fakeUser: AuthUser = { _id: '123', pseudo: 'Joueur1', email: 'test@test.com' }
+const fakeUser: AuthUser = { _id: '123', pseudo: 'Joueur1', email: 'test@test.com', token: 'fake-jwt-token' }
 
 describe('MainMenu', () => {
   const onPlay = vi.fn()

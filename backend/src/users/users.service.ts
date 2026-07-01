@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Db, ObjectId } from 'mongodb';
 import * as bcrypt from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
 import { MONGO_DB } from '../database/database.module';
 import { User } from './user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,7 +19,10 @@ const SALT_ROUNDS = 10;
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(MONGO_DB) private readonly db: Db) {}
+  constructor(
+    @Inject(MONGO_DB) private readonly db: Db,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async create(dto: CreateUserDto): Promise<Omit<User, 'passwordHash'>> {
     const existing = await this.db
@@ -83,7 +87,7 @@ export class UsersService {
     return result;
   }
 
-  async login(dto: LoginDto): Promise<Omit<User, 'passwordHash'>> {
+  async login(dto: LoginDto): Promise<{ user: Omit<User, 'passwordHash'>; token: string }> {
     const user = await this.db
       .collection<User>(COLLECTION)
       .findOne({ email: dto.email });
@@ -98,7 +102,12 @@ export class UsersService {
     }
 
     const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+    const token = this.jwtService.sign({
+      sub: safeUser._id!.toString(),
+      email: safeUser.email,
+      pseudo: safeUser.pseudo,
+    });
+    return { user: safeUser, token };
   }
 
   async remove(id: string): Promise<void> {

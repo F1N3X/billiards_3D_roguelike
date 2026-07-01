@@ -3,17 +3,30 @@ import { Db, ObjectId } from 'mongodb';
 import { MONGO_DB } from '../database/database.module';
 import { GameHistory, LeaderboardEntry, PlayerStats } from './game-history.interface';
 import { CreateGameHistoryDto } from './dto/create-game-history.dto';
+import { GameSessionsService } from '../game-sessions/game-sessions.service';
 
 const COLLECTION = 'game_history';
 
 @Injectable()
 export class GameHistoryService {
-  constructor(@Inject(MONGO_DB) private readonly db: Db) {}
+  constructor(
+    @Inject(MONGO_DB) private readonly db: Db,
+    private readonly gameSessionsService: GameSessionsService,
+  ) {}
 
-  async create(dto: CreateGameHistoryDto): Promise<GameHistory> {
+  async create(dto: CreateGameHistoryDto, userId: string): Promise<GameHistory> {
+    const gameMode = dto.gameMode ?? 'classic';
+    await this.gameSessionsService.consumeAndValidate(
+      dto.sessionId,
+      userId,
+      gameMode,
+      dto.score,
+      dto.shots,
+    );
+
     const entry: GameHistory = {
       userId: new ObjectId(dto.userId),
-      gameMode: dto.gameMode ?? 'classic',
+      gameMode,
       score: dto.score,
       shots: dto.shots,
       playedAt: new Date(),

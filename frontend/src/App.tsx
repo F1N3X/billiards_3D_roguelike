@@ -1,6 +1,6 @@
-import { useReducer, useEffect, useState } from 'react'
+import { useReducer, useEffect, useState, useRef } from 'react'
 import { AuthProvider, useAuth } from './auth/auth-context'
-import { saveGameHistory, fetchLeaderboard, fetchPlayerStats } from './api/api'
+import { startGameSession, saveGameHistory, fetchLeaderboard, fetchPlayerStats } from './api/api'
 import BilliardsScene from './BilliardsScene'
 import { GameDashboard } from './ui/GameDashboard'
 import { VictoryScreen } from './ui/VictoryScreen'
@@ -60,6 +60,7 @@ function GameScreen({ onMenu }: { onMenu: () => void }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [leaderboardLoading, setLeaderboardLoading] = useState(true)
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null)
+  const sessionIdRef = useRef<string | null>(null)
 
   const refreshLeaderboard = () => {
     setLeaderboardLoading(true)
@@ -81,10 +82,17 @@ function GameScreen({ onMenu }: { onMenu: () => void }) {
   }, [user])
 
   useEffect(() => {
-    if (!gameState.victory || !user) return
+    if (!user) return
+    startGameSession('classic', user.token)
+      .then(({ sessionId }) => { sessionIdRef.current = sessionId })
+      .catch(err => console.error('[GameScreen] startGameSession', err))
+  }, [user])
+
+  useEffect(() => {
+    if (!gameState.victory || !user || !sessionIdRef.current) return
 
     setSavedStatus('saving')
-    saveGameHistory(user._id, 'classic', gameState.victory.totalScore, gameState.victory.shots)
+    saveGameHistory(user._id, 'classic', gameState.victory.totalScore, gameState.victory.shots, user.token, sessionIdRef.current)
       .then(() => {
         setSavedStatus('saved')
         refreshLeaderboard()
@@ -153,6 +161,7 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [leaderboardLoading, setLeaderboardLoading] = useState(true)
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null)
+  const sessionIdRef = useRef<string | null>(null)
 
   const refreshLeaderboard = () => {
     setLeaderboardLoading(true)
@@ -174,10 +183,17 @@ function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
   }, [user])
 
   useEffect(() => {
-    if (!gameState.victory || !user) return
+    if (!user) return
+    startGameSession('rumble', user.token)
+      .then(({ sessionId }) => { sessionIdRef.current = sessionId })
+      .catch(err => console.error('[RumbleGameScreen] startGameSession', err))
+  }, [user])
+
+  useEffect(() => {
+    if (!gameState.victory || !user || !sessionIdRef.current) return
 
     setSavedStatus('saving')
-    saveGameHistory(user._id, 'rumble', gameState.victory.totalScore, gameState.victory.shots)
+    saveGameHistory(user._id, 'rumble', gameState.victory.totalScore, gameState.victory.shots, user.token, sessionIdRef.current)
       .then(() => {
         setSavedStatus('saved')
         refreshLeaderboard()

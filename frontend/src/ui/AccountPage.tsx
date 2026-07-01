@@ -34,8 +34,8 @@ export function AccountPage({ onBack }: Props) {
     setSaved(false)
     setLoading(true)
     try {
-      const updated = await updatePseudo(user._id, pseudo)
-      updateUser(updated)
+      const updated = await updatePseudo(user._id, pseudo, user.token)
+      updateUser({ ...updated, token: user.token })
       setSaved(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')

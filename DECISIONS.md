@@ -52,13 +52,35 @@ Le Dockerfile backend est multi-stage (builder `node:20-alpine` → production `
 
 ---
 
-## 2026-06-30 — Authentification via localStorage (sans JWT ni sessions serveur)
+## 2026-07-01 — Intégrité des scores via token de session de jeu
 
-**Décision :** La connexion utilise `POST /users/login` (email + mot de passe, vérification bcrypt), et l'objet utilisateur retourné est stocké en `localStorage` côté client. Aucun token JWT, aucune session serveur.
+**Décision :** Avant de démarrer une partie, le frontend appelle `POST /game-sessions/start` (JWT requis) → reçoit un `sessionId`. En fin de partie, ce `sessionId` est envoyé avec le score dans `POST /game-history`. Le backend valide : session existante, appartient à l'utilisateur JWT, non expirée (TTL 2h), non encore utilisée, score ≤ plafond physique du mode.
 
-**Pourquoi :** Le projet est un prototype mono-utilisateur sans besoins de sécurité avancés. Une session JWT/serveur aurait nécessité un module auth NestJS complet (guards, stratégies Passport, refresh tokens) pour un gain nul à ce stade. Le localStorage est suffisant pour persister l'identité entre rechargements.
+**Plafond (Classic uniquement) :** 9 000 pts — 15 boules en 1 coup = 6 750 + bonus rapidité max 1 900 = 8 650, marge de 350.
 
-**Alternatives rejetées :** JWT (over-engineering pour ce prototype), sessions serveur (stateful, complexe à dockeriser), cookies httpOnly (nécessite CORS credentials + configuration CSRF).
+**Pas de plafond pour Rumble :** `clone_on_contact` crée des boules persistantes entre les tirs. Après `n` tirs de clonage, on peut avoir jusqu'à `15 × 2ⁿ` boules ; le score d'un seul tir avec N boules est `25N² + 75N`, ce qui dépasse 100 000 en quelques tirs. Tout plafond fini serait soit trop bas (faux positifs sur des parties légitimes) soit trop haut (inutile). La protection Rumble repose uniquement sur le token de session (single-use, lié au JWT, TTL 2h).
+
+**Ce que ça bloque :** un utilisateur connecté ne peut pas envoyer `{ score: 999999 }` directement à `POST /game-history` — il a besoin d'un `sessionId` frais issu du serveur, lié à son JWT, single-use.
+
+**Ce que ça ne bloque pas :** un bot qui joue vraiment la partie pour obtenir un sessionId valide. La simulation physique côté serveur serait la seule protection absolue, mais elle impliquerait de porter le moteur `stepPhysics` côté backend — hors scope pour ce projet.
+
+**Alternatives rejetées :** HMAC du score côté client (le secret serait exposé dans le bundle JS) ; replay serveur complet (nécessite un moteur physique identique côté backend, non déterministe entre Node et navigateur) ; validation uniquement par plafond de score (sans sessionId, n'importe qui peut POSTer).
+
+---
+
+## 2026-07-01 — Authentification JWT signée côté serveur
+
+**Décision :** `POST /users/login` retourne `{ user, token }` où `token` est un JWT signé (HS256, expiration 7j) avec `@nestjs/jwt`. Le secret est dans `.env` (`JWT_SECRET`). Le token est stocké dans `localStorage` via `AuthContext` et envoyé en `Authorization: Bearer <token>` sur les routes protégées.
+
+**Routes protégées :** `PATCH /users/:id`, `DELETE /users/:id`, `POST /game-history`, `DELETE /game-history/:id` — toutes les mutations qui requirent une identité. Les routes de lecture publique (leaderboard, stats, register, login) restent ouvertes.
+
+**`JwtAuthGuard`** : guard NestJS autonome (sans Passport) qui vérifie la signature du JWT via `JwtService.verify()`. Attaché aux routes via `@UseGuards(JwtAuthGuard)`.
+
+**Inscription :** `POST /users` (register) enchaîne automatiquement un `POST /users/login` pour retourner un token directement — l'utilisateur est connecté dès la création de compte.
+
+**Pourquoi remplacer l'approche sans token :** Les routes mutantes étaient accessibles à n'importe qui connaissant un `userId`. Avec le JWT, seul le propriétaire du token peut modifier/supprimer son compte ou sauvegarder une partie.
+
+**Alternatives rejetées :** Passport.js (surcouche lourde pour ce cas simple) ; cookies httpOnly (CORS credentials + CSRF sur un frontend Vite séparé du backend) ; sessions serveur (stateful, incompatible avec Docker stateless).
 
 ---
 
