@@ -308,7 +308,7 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       const rect = mount.getBoundingClientRect()
       const ndcX =  ((e.clientX - rect.left) / rect.width)  * 2 - 1
       const ndcY = -((e.clientY - rect.top)  / rect.height) * 2 + 1
-      raycaster.setFromCamera({ x: ndcX, y: ndcY }, camera)
+      raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera)
       if (raycaster.ray.intersectPlane(tablePlane, intersection)) {
         const dx = intersection.x - cb.mesh.position.x
         const dz = intersection.z - cb.mesh.position.z

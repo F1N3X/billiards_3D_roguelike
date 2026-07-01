@@ -61,40 +61,40 @@ describe('MainMenu', () => {
   })
 
   it('affiche le bouton Mode Classique', () => {
-    renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />)
+    renderWithUser(<MainMenu onPlay={onPlay} onPlayRumble={vi.fn()} onLogin={onLogin} onAccount={onAccount} />)
     expect(screen.getByRole('button', { name: /Mode Classique/ })).toBeInTheDocument()
   })
 
   it('appelle onPlay au clic sur Mode Classique', async () => {
-    renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />)
+    renderWithUser(<MainMenu onPlay={onPlay} onPlayRumble={vi.fn()} onLogin={onLogin} onAccount={onAccount} />)
     await userEvent.click(screen.getByRole('button', { name: /Mode Classique/ }))
     expect(onPlay).toHaveBeenCalledOnce()
   })
 
   it('appelle onPlay à la touche Entrée', () => {
-    renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />)
+    renderWithUser(<MainMenu onPlay={onPlay} onPlayRumble={vi.fn()} onLogin={onLogin} onAccount={onAccount} />)
     fireEvent.keyDown(window, { key: 'Enter' })
     expect(onPlay).toHaveBeenCalledOnce()
   })
 
   it('affiche Connexion si non connecté', () => {
-    renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />, null)
+    renderWithUser(<MainMenu onPlay={onPlay} onPlayRumble={vi.fn()} onLogin={onLogin} onAccount={onAccount} />, null)
     expect(screen.getByText('Connexion / Inscription')).toBeInTheDocument()
   })
 
   it('affiche Mon Compte si connecté', () => {
-    renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />, fakeUser)
+    renderWithUser(<MainMenu onPlay={onPlay} onPlayRumble={vi.fn()} onLogin={onLogin} onAccount={onAccount} />, fakeUser)
     expect(screen.getByText('Mon Compte')).toBeInTheDocument()
     expect(screen.queryByText('Connexion / Inscription')).not.toBeInTheDocument()
   })
 
   it('affiche le pseudo du joueur connecté', () => {
-    renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />, fakeUser)
+    renderWithUser(<MainMenu onPlay={onPlay} onPlayRumble={vi.fn()} onLogin={onLogin} onAccount={onAccount} />, fakeUser)
     expect(screen.getByText('Joueur1')).toBeInTheDocument()
   })
 
   it('appelle onLogin au clic sur Connexion', async () => {
-    renderWithUser(<MainMenu onPlay={onPlay} onLogin={onLogin} onAccount={onAccount} />, null)
+    renderWithUser(<MainMenu onPlay={onPlay} onPlayRumble={vi.fn()} onLogin={onLogin} onAccount={onAccount} />, null)
     await userEvent.click(screen.getByText('Connexion / Inscription'))
     expect(onLogin).toHaveBeenCalledOnce()
   })
