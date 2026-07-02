@@ -19,8 +19,7 @@ export class BilliardsEngine {
   private mouseDownY = 0
   private touchStartX = 0
   private touchStartY = 0
-  private inputListeners: Array<[EventTarget, string, EventListener]> = []
-  private resizeHandler: () => void
+  private cleanups: Array<() => void> = []
 
   constructor(mount: HTMLDivElement, callbacks: EngineCallbacks) {
     this.callbacks = callbacks
@@ -28,8 +27,7 @@ export class BilliardsEngine {
     this.state = createEngineState(this.objects.ballStates)
     this.tablePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.objects.CUE_Y)
     this.setupInputHandlers(mount)
-    this.resizeHandler = this.buildResizeHandler(mount)
-    window.addEventListener('resize', this.resizeHandler)
+    this.setupResizeHandler(mount)
     this.startAnimationLoop()
   }
 
@@ -39,10 +37,7 @@ export class BilliardsEngine {
 
   dispose(): void {
     cancelAnimationFrame(this.frameId)
-    window.removeEventListener('resize', this.resizeHandler)
-    for (const [target, type, handler] of this.inputListeners) {
-      target.removeEventListener(type, handler)
-    }
+    for (const cleanup of this.cleanups) cleanup()
     const { objects, state } = this
     cleanupExtraCueBalls(objects, state)
     for (const m of objects.ghostBalls) objects.scene.remove(m)
@@ -66,18 +61,13 @@ export class BilliardsEngine {
     objects.mount.removeChild(objects.renderer.domElement)
   }
 
-  private reg(target: EventTarget, type: string, handler: (e: Event) => void): void {
-    target.addEventListener(type, handler)
-    this.inputListeners.push([target, type, handler])
-  }
-
   private setupInputHandlers(mount: HTMLDivElement): void {
     const onKeyDown = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'ArrowRight', 'a', 'd', 'Enter', ' '].includes(e.key)) e.preventDefault()
       this.keys.add(e.key)
       if (e.key === 'Enter' || e.key === ' ') fireShot(this.objects, this.state, this.callbacks)
     }
-    const onKeyUp = (e: KeyboardEvent) => this.keys.delete(e.key)
+    const onKeyUp = (e: KeyboardEvent) => { this.keys.delete(e.key) }
 
     const onMouseMove = (e: MouseEvent) => {
       if (this.state.phase !== 'aiming') return
@@ -93,7 +83,6 @@ export class BilliardsEngine {
         if (Math.hypot(dx, dz) > 0.01) this.state.aimAngle = Math.atan2(dz, dx)
       }
     }
-
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return
       this.mouseDownX = e.clientX
@@ -136,24 +125,37 @@ export class BilliardsEngine {
       }
     }
 
-    this.reg(window, 'keydown', onKeyDown as (e: Event) => void)
-    this.reg(window, 'keyup', onKeyUp as (e: Event) => void)
-    this.reg(mount, 'mousemove', onMouseMove as (e: Event) => void)
-    this.reg(mount, 'mousedown', onMouseDown as (e: Event) => void)
-    this.reg(mount, 'mouseup', onMouseUp as (e: Event) => void)
-    this.reg(mount, 'touchstart', onTouchStart as (e: Event) => void)
-    this.reg(mount, 'touchmove', onTouchMove as (e: Event) => void)
-    this.reg(mount, 'touchend', onTouchEnd as (e: Event) => void)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    mount.addEventListener('mousemove', onMouseMove)
+    mount.addEventListener('mousedown', onMouseDown)
+    mount.addEventListener('mouseup', onMouseUp)
+    mount.addEventListener('touchstart', onTouchStart)
+    mount.addEventListener('touchmove', onTouchMove)
+    mount.addEventListener('touchend', onTouchEnd)
+
+    this.cleanups.push(
+      () => window.removeEventListener('keydown', onKeyDown),
+      () => window.removeEventListener('keyup', onKeyUp),
+      () => mount.removeEventListener('mousemove', onMouseMove),
+      () => mount.removeEventListener('mousedown', onMouseDown),
+      () => mount.removeEventListener('mouseup', onMouseUp),
+      () => mount.removeEventListener('touchstart', onTouchStart),
+      () => mount.removeEventListener('touchmove', onTouchMove),
+      () => mount.removeEventListener('touchend', onTouchEnd),
+    )
   }
 
-  private buildResizeHandler(mount: HTMLDivElement): () => void {
-    return () => {
+  private setupResizeHandler(mount: HTMLDivElement): void {
+    const handler = () => {
       const nw = mount.clientWidth
       const nh = mount.clientHeight
       this.objects.camera.aspect = nw / nh
       this.objects.camera.updateProjectionMatrix()
       this.objects.renderer.setSize(nw, nh)
     }
+    window.addEventListener('resize', handler)
+    this.cleanups.push(() => window.removeEventListener('resize', handler))
   }
 
   private startAnimationLoop(): void {
