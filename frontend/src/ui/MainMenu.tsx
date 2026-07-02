@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../auth/auth-context'
+import { useAuth } from '../auth/use-auth'
 import { fetchLeaderboard } from '../api/api'
 import { Leaderboard } from './Leaderboard'
 import type { LeaderboardEntry, GameMode } from '../types/game'

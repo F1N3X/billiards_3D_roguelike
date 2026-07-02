@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { login, register } from '../api/api'
-import { useAuth } from '../auth/auth-context'
+import { useAuth } from '../auth/use-auth'
 import styles from './LoginPage.module.css'
 
 type Tab = 'login' | 'register'

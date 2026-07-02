@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import {
   FRICTION, MIN_SPEED, MAX_BALL_SPEED, TABLE_WIDTH, TABLE_LENGTH, BALL_RADIUS,
-  POCKET_XZ, POCKET_RADIUS, CUE_TIP_GAP, CUE_LENGTH,
+  POCKET_XZ, POCKET_RADIUS, CUE_TIP_GAP, CUE_LENGTH, PHYSICS_TARGET_FPS,
 } from '../config/constants'
 import type { BallState } from '../types/billiards'
 
@@ -13,7 +13,7 @@ export interface StepPhysicsOpts {
 
 export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOpts) {
   const frictionBase = opts?.frictionOverride ?? FRICTION
-  const friction = Math.pow(frictionBase, dt * 60)
+  const friction = Math.pow(frictionBase, dt * PHYSICS_TARGET_FPS)
   const wallRestitution = opts?.wallRestitution ?? 0.75
   const maxX = TABLE_WIDTH / 2 - BALL_RADIUS
   const maxZ = TABLE_LENGTH / 2 - BALL_RADIUS

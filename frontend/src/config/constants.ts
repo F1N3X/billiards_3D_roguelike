@@ -55,6 +55,8 @@ export const MAGNET_RADIUS = 1.2
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 
+export const PHYSICS_TARGET_FPS = 60
+
 export const SCORE_PER_BALL = 100
 export const COMBO_BONUS_PER_EXTRA = 50
 export const SCRATCH_PENALTY = -200

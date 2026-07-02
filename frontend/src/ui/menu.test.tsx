@@ -25,8 +25,11 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-vi.mock('../auth/auth-context', () => ({
+vi.mock('../auth/use-auth', () => ({
   useAuth: () => useContext(AuthContext),
+}))
+
+vi.mock('../auth/auth-context', () => ({
   AuthProvider: ({ children }: { children: ReactNode }) => children,
 }))
 

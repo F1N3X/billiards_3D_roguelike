@@ -1,16 +1,9 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { useState, useCallback, type ReactNode } from 'react'
+import { AuthContext } from './auth-context-def'
+import type { AuthContextValue } from './auth-context-def'
 import type { AuthUser } from '../types/user'
 
 const STORAGE_KEY = 'billiards_user'
-
-interface AuthContextValue {
-  user: AuthUser | null
-  signIn: (user: AuthUser) => void
-  signOut: () => void
-  updateUser: (user: AuthUser) => void
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
 
 function loadUser(): AuthUser | null {
   try {
@@ -22,7 +15,8 @@ function loadUser(): AuthUser | null {
       return null
     }
     return user
-  } catch {
+  } catch (e) {
+    console.error('[auth-context] loadUser: token parse error', e)
     return null
   }
 }
@@ -45,15 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u)
   }, [])
 
+  const value: AuthContextValue = { user, signIn, signOut, updateUser }
+
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, updateUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
-  return ctx
 }

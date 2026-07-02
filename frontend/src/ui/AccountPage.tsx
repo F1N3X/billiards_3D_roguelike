@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { updatePseudo } from '../api/api'
-import { useAuth } from '../auth/auth-context'
+import { useAuth } from '../auth/use-auth'
 import styles from './AccountPage.module.css'
 
 interface Props {

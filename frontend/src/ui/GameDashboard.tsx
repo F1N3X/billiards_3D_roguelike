@@ -1,4 +1,4 @@
-import { useAuth } from '../auth/auth-context'
+import { useAuth } from '../auth/use-auth'
 import { Leaderboard } from './Leaderboard'
 import type { LeaderboardEntry, PlayerStats, GameMode } from '../types/game'
 import { GAME_MODE_LABELS } from '../types/game'
