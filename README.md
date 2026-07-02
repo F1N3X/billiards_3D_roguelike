@@ -27,7 +27,7 @@ docker compose up --build
 
 Le backend est disponible sur [http://localhost:3000](http://localhost:3000).
 
-> Les secrets (`MONGODB_URI`) sont lus depuis `backend/.env`, jamais embarqués dans l'image.
+> Les secrets (`MONGODB_URI`, `JWT_SECRET`) sont lus depuis `backend/.env`, jamais embarqués dans l'image.
 
 Le frontend produit des fichiers statiques : déploie le build sur Vercel, Netlify ou GitHub Pages.
 
@@ -75,6 +75,7 @@ cd backend && npm run start:prod
 | Outil | Rôle |
 |---|---|
 | [NestJS](https://nestjs.com/) | Framework HTTP |
+| [@nestjs/jwt](https://github.com/nestjs/jwt) | Tokens JWT (HS256, 7j) |
 | [MongoDB (driver natif)](https://www.mongodb.com/docs/drivers/node/) | Base de données |
 | [MongoDB Atlas](https://www.mongodb.com/atlas) | Cluster cloud |
 | [bcrypt](https://github.com/kelektiv/node.bcrypt.js) | Hash des mots de passe |
@@ -86,39 +87,58 @@ cd backend && npm run start:prod
 billiards_3D_roguelike/
 ├── frontend/
 │   └── src/
-│       ├── BilliardsScene.tsx      # Scène Three.js principale
-│       ├── App.tsx                 # Point d'entrée React
+│       ├── BilliardsScene.tsx          # Scène Three.js principale (moteur impératif)
+│       ├── App.tsx                     # Point d'entrée React + AppRouter (état page)
+│       ├── api/
+│       │   └── api.ts                  # Appels HTTP (Authorization: Bearer <token>)
+│       ├── auth/
+│       │   └── auth-context.tsx        # AuthContext — utilisateur connecté + token JWT
 │       ├── config/
-│       │   └── constants.ts        # Constantes de gameplay
+│       │   ├── constants.ts            # Constantes de gameplay
+│       │   └── power-ups.ts            # Constantes des power-ups
+│       ├── game/
+│       │   └── powerups/               # Un fichier par power-up + registry + types
 │       ├── logic/
-│       │   └── score.ts            # Calcul du score
+│       │   ├── score.ts                # Calcul du score
+│       │   └── power-up-pool.ts        # Tirage aléatoire de la main Rumble
 │       ├── physics/
-│       │   └── step-physics.ts     # Moteur physique
+│       │   └── step-physics.ts         # Moteur physique (source de vérité des positions)
 │       ├── scene/
-│       │   ├── create-balls.ts     # Placement des boules
-│       │   ├── create-cue.ts       # Queue de billard
-│       │   ├── create-lamps.ts     # Éclairage
-│       │   ├── create-room.ts      # Salle
-│       │   └── create-table.ts     # Table
+│       │   ├── create-balls.ts         # Placement des boules
+│       │   ├── create-cue.ts           # Queue de billard
+│       │   ├── create-lamps.ts         # Éclairage
+│       │   ├── create-room.ts          # Salle
+│       │   └── create-table.ts         # Table + définition des trous
 │       ├── types/
-│       │   └── billiards.ts        # Types partagés
+│       │   ├── billiards.ts            # Types physique / scène
+│       │   ├── game.ts                 # Types mode de jeu
+│       │   └── user.ts                 # Types utilisateur / auth
 │       └── ui/
-│           ├── GameHud.tsx         # HUD en jeu
-│           └── VictoryScreen.tsx   # Écran de victoire
+│           ├── MainMenu.tsx            # Menu principal
+│           ├── LoginPage.tsx           # Connexion / inscription
+│           ├── AccountPage.tsx         # Page compte utilisateur
+│           ├── GameDashboard.tsx       # Wrapper mode classique
+│           ├── RumbleHud.tsx           # HUD mode Rumble (pièces + main)
+│           ├── VictoryScreen.tsx       # Écran de victoire
+│           └── Leaderboard.tsx         # Classement
 └── backend/
     └── src/
         ├── database/
-        │   └── database.module.ts  # Connexion MongoDB (tokens MONGO_CLIENT / MONGO_DB)
-        ├── users/                  # CRUD utilisateurs
+        │   └── database.module.ts      # Connexion MongoDB (tokens MONGO_CLIENT / MONGO_DB)
+        ├── auth/                       # JwtAuthGuard (HS256, sans Passport)
+        ├── users/                      # CRUD utilisateurs + login
         │   ├── users.controller.ts
         │   ├── users.service.ts
         │   ├── user.interface.ts
         │   └── dto/
-        └── game-history/           # Historique des parties
-            ├── game-history.controller.ts
-            ├── game-history.service.ts
-            ├── game-history.interface.ts
-            └── dto/
+        ├── game-history/               # Historique des parties
+        │   ├── game-history.controller.ts
+        │   ├── game-history.service.ts
+        │   ├── game-history.interface.ts
+        │   └── dto/
+        └── game-sessions/              # Tokens de session single-use (TTL 2h)
+            ├── game-sessions.controller.ts
+            └── game-sessions.service.ts
 ```
 
 ## Base de données
@@ -136,7 +156,7 @@ billiards_3D_roguelike/
 | `createdAt` | Date | Date de création |
 | `updatedAt` | Date | Date de dernière modification |
 
-> `passwordHash` n'est jamais renvoyé dans les réponses API.
+> `passwordHash` n'est jamais renvoyé dans les réponses API (projection MongoDB).
 
 ### Collection `game_history`
 
@@ -144,23 +164,41 @@ billiards_3D_roguelike/
 |---|---|---|
 | `_id` | ObjectId | Identifiant MongoDB |
 | `userId` | ObjectId | Référence vers `users._id` |
+| `sessionId` | string | Token de session single-use (requis) |
 | `gameMode` | `"classic"` | Mode de jeu |
 | `score` | number | Score final |
 | `shots` | number | Nombre de coups joués |
 | `playedAt` | Date | Date de la partie |
 
+### Collection `game_sessions`
+
+| Champ | Type | Description |
+|---|---|---|
+| `_id` | ObjectId | Identifiant MongoDB |
+| `userId` | ObjectId | Référence vers `users._id` |
+| `used` | boolean | `true` après consommation (single-use) |
+| `createdAt` | Date | Date de création (TTL 2h) |
+
 ## API
+
+### Authentification
+
+`POST /users/login` retourne `{ user, token }`. Le token JWT (HS256, 7j) doit être envoyé en `Authorization: Bearer <token>` sur les routes protégées. `POST /users` (register) retourne également `{ user, token }` — l'utilisateur est connecté dès la création de compte.
+
+### Routes protégées par JWT
+
+`PATCH /users/:id`, `DELETE /users/:id`, `POST /game-history`, `DELETE /game-history/:id`, `POST /game-sessions/start`.
 
 ### Utilisateurs — `/users`
 
-| Méthode | Route | Description |
-|---|---|---|
-| `POST` | `/users` | Créer un utilisateur |
-| `POST` | `/users/login` | Connexion (retourne l'utilisateur sans passwordHash) |
-| `GET` | `/users` | Lister tous les utilisateurs |
-| `GET` | `/users/:id` | Récupérer un utilisateur |
-| `PATCH` | `/users/:id` | Modifier un utilisateur (pseudo, email, password) |
-| `DELETE` | `/users/:id` | Supprimer un utilisateur |
+| Méthode | Route | Auth | Description |
+|---|---|---|---|
+| `POST` | `/users` | — | Créer un utilisateur (retourne `{ user, token }`) |
+| `POST` | `/users/login` | — | Connexion (retourne `{ user, token }`) |
+| `GET` | `/users` | — | Lister tous les utilisateurs |
+| `GET` | `/users/:id` | — | Récupérer un utilisateur |
+| `PATCH` | `/users/:id` | JWT | Modifier un utilisateur |
+| `DELETE` | `/users/:id` | JWT | Supprimer un utilisateur |
 
 **Corps de création :**
 ```json
@@ -174,22 +212,30 @@ billiards_3D_roguelike/
 
 ### Historique des parties — `/game-history`
 
-| Méthode | Route | Description |
-|---|---|---|
-| `POST` | `/game-history` | Enregistrer une partie |
-| `GET` | `/game-history` | Lister toutes les parties |
-| `GET` | `/game-history/user/:userId` | Historique d'un joueur |
-| `GET` | `/game-history/:id` | Récupérer une partie |
-| `DELETE` | `/game-history/:id` | Supprimer une partie |
+| Méthode | Route | Auth | Description |
+|---|---|---|---|
+| `POST` | `/game-history` | JWT | Enregistrer une partie |
+| `GET` | `/game-history` | — | Lister toutes les parties |
+| `GET` | `/game-history/user/:userId` | — | Historique d'un joueur |
+| `GET` | `/game-history/:id` | — | Récupérer une partie |
+| `DELETE` | `/game-history/:id` | JWT | Supprimer une partie |
 
 **Corps d'enregistrement :**
 ```json
-{ "userId": "string", "score": 0, "shots": 0, "gameMode": "classic" }
+{ "userId": "string", "sessionId": "string", "score": 0, "shots": 0, "gameMode": "classic" }
 ```
+
+### Sessions de jeu — `/game-sessions`
+
+| Méthode | Route | Auth | Description |
+|---|---|---|---|
+| `POST` | `/game-sessions/start` | JWT | Créer une session single-use (retourne `{ sessionId }`, TTL 2h) |
+
+> Le `sessionId` doit être obtenu avant de démarrer une partie et transmis avec le score en fin de partie. Il ne peut être utilisé qu'une seule fois.
 
 ## Mode Rumble
 
-Mode roguelike où le joueur gagne **+1 pièce par coup** et peut acheter des power-ups entre les tirs. La main de 4 slots est tirée aléatoirement à chaque tour (Fisher-Yates partiel sur le pool complet).
+Mode roguelike où le joueur gagne **+1 pièce par coup** et peut acheter des power-ups entre les tirs. La main de 4 slots est tirée aléatoirement à chaque tour (Fisher-Yates partiel sur le pool complet). Les effets sont actifs pour ce tir uniquement. Les scores Rumble ne sont pas persistés en base.
 
 ### Power-ups disponibles
 
@@ -199,7 +245,7 @@ Mode roguelike où le joueur gagne **+1 pièce par coup** et peut acheter des po
 | Triangle | 5 | 3 blanches en triangle (1 en pointe, 2 en éventail) |
 | Triple Tir | 4 | 3 blanches en ligne dans l'axe du tir |
 | Tir Explosif | 4 | Explosion radiale au premier contact blanc→coloré |
-| Clonage au contact | 3 | Chaque boule touchée génère un clone coloré |
+| Clonage au contact | 3 | Chaque boule touchée génère un clone coloré persistant |
 | Boule Magnétique | 3 | La(les) blanche(s) attirent les boules colorées proches |
 | Tir Courbé Gauche | 2 | Arc de cercle vers la gauche (preview orange) |
 | Tir Courbé Droite | 2 | Arc de cercle vers la droite (preview orange) |
@@ -222,7 +268,7 @@ L'application démarre sur un **menu principal** avec trois destinations :
 - **Connexion / Inscription** — affiché si non connecté. Permet de créer un compte ou se connecter avec email + mot de passe.
 - **Mon Compte** — affiché si connecté. Permet de modifier son pseudo.
 
-La session est persistée dans `localStorage` (aucun token JWT). En mode classique, si le joueur est connecté et remporte la partie, le score est automatiquement sauvegardé en base via `POST /game-history`.
+La navigation est gérée par un état React (`page: 'menu' | 'login' | 'account' | 'game'`) dans `AppRouter` — pas de `react-router-dom`. La session est persistée dans `localStorage` via un token JWT. En mode classique, si le joueur est connecté et remporte la partie, le score est automatiquement sauvegardé en base via `POST /game-history`.
 
 ## Contrôles en jeu
 
