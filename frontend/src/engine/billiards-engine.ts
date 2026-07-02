@@ -66,7 +66,7 @@ export class BilliardsEngine {
     objects.mount.removeChild(objects.renderer.domElement)
   }
 
-  private reg(target: EventTarget, type: string, handler: EventListener): void {
+  private reg(target: EventTarget, type: string, handler: (e: Event) => void): void {
     target.addEventListener(type, handler)
     this.inputListeners.push([target, type, handler])
   }
@@ -136,14 +136,14 @@ export class BilliardsEngine {
       }
     }
 
-    this.reg(window, 'keydown', onKeyDown as EventListener)
-    this.reg(window, 'keyup', onKeyUp as EventListener)
-    this.reg(mount, 'mousemove', onMouseMove as EventListener)
-    this.reg(mount, 'mousedown', onMouseDown as EventListener)
-    this.reg(mount, 'mouseup', onMouseUp as EventListener)
-    this.reg(mount, 'touchstart', onTouchStart as EventListener)
-    this.reg(mount, 'touchmove', onTouchMove as EventListener)
-    this.reg(mount, 'touchend', onTouchEnd as EventListener)
+    this.reg(window, 'keydown', onKeyDown as (e: Event) => void)
+    this.reg(window, 'keyup', onKeyUp as (e: Event) => void)
+    this.reg(mount, 'mousemove', onMouseMove as (e: Event) => void)
+    this.reg(mount, 'mousedown', onMouseDown as (e: Event) => void)
+    this.reg(mount, 'mouseup', onMouseUp as (e: Event) => void)
+    this.reg(mount, 'touchstart', onTouchStart as (e: Event) => void)
+    this.reg(mount, 'touchmove', onTouchMove as (e: Event) => void)
+    this.reg(mount, 'touchend', onTouchEnd as (e: Event) => void)
   }
 
   private buildResizeHandler(mount: HTMLDivElement): () => void {
