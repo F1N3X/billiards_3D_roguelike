@@ -8,8 +8,10 @@ Billard 3D Roguelike est un jeu de billard en 3D où le joueur doit vider la tab
 - **Framework front** : [React]
 - **Rendu 3D** : [Three.js / React Three Fiber]
 - **Physique** : [stepPhysics]
-- **Framework back** : Nest.js
+- **Framework back** : [Nest.js]
+- **Base de donnée** : [MongoDB]
 - **Styling** : [CSS modules]
+- **Lint** : [ESLint]
 - **Tests** : [Vitest]
 
 ## Règles métier critiques
@@ -62,6 +64,17 @@ Pour les calculs et règles métier, **utilise ces fonctions** :
 - `frontend/src/config/*.ts` → constantes de gameplay
 - `frontend/src/types/*.ts` → types partagés
 
+### Scripts utilitaires (`scripts/` — `npx tsx scripts/<nom>.ts`)
+
+| Script | Usage |
+|---|---|
+| `validate-config.ts` | Vérifie la cohérence des constantes de `constants.ts` (physique, géométrie, score). Exit 0/1. |
+| `score-table.ts` | Affiche la table des scores pour tous les scénarios de coup et les bonus de victoire. |
+| `check-rack.ts` | Valide les positions initiales des boules (triangle, pas de chevauchement, pas dans les poches). Exit 0/1. |
+| `simulate-trajectory.ts` | Simule la trajectoire d'une boule blanche. Args : `[angle_deg] [power_mult]`. |
+| `audit-powerups.ts` | Audite les power-ups (champs requis, cohérence registry ↔ type ↔ fichiers). Exit 0/1. |
+| `seed-db.ts` | Seede la base avec des utilisateurs et parties de test. Nécessite le backend. |
+
 
 ## Anti-patterns d'ingénierie
 1. ❌ **Big bang refacto** : pas de feature flag, pas de coexistence. Remplace, nettoie, commit.
@@ -83,6 +96,8 @@ npm run preview
 ## ## Fichiers de référence
 - `README.md` → présentation utilisateur du projet
 - `DECISIONS.md` → suivis des explications des raisons des ajouts des features
+- `memory/` → fichiers de mémoire et de contexte des différents apsects du projet
+- `scripts/` → fichiers de scripts déterministes
 
 
 ## Documentation
@@ -120,6 +135,6 @@ Avant toute modification :
 
 ## Memory
 
-Ton fichier de mémoire se trouve dans le dossier `./memory` avec  les fichiers suivants :
-- `MEMORY.md`
-- `project_backend_architecture.md`
+Tes fichiers de mémoire se trouvent dans le dossier `./memory`.
+Sers toi de ces dossier pour récupérer le contexte du projet.
+Met les à jour à chaque modification afin de garder le contexte.
