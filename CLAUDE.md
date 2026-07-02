@@ -76,6 +76,33 @@ Pour les calculs et règles métier, **utilise ces fonctions** :
 | `seed-db.ts` | Seede la base avec des utilisateurs et parties de test. Nécessite le backend. |
 
 
+## Gates qualité
+
+Tout code produit ou modifié doit passer ces vérifications avant d'être considéré comme terminé.
+
+### Linting & formatage
+- **ESLint** : aucune erreur. `npm run lint` doit sortir avec exit 0.
+- **Prettier** : formatage appliqué. Utiliser `npx prettier --write <fichier>` si besoin.
+
+### TypeScript
+- ❌ **Interdit** : `any` explicite ou implicite. Utiliser des types précis ou `unknown` + assertion.
+- ❌ **Interdit** : imports inutilisés. ESLint rule `no-unused-vars` / `@typescript-eslint/no-unused-vars` doit être satisfaite.
+- ❌ **Interdit** : `// @ts-ignore` ou `// @ts-expect-error` sans commentaire explicatif.
+
+### Gestion des erreurs
+- ❌ **Interdit** : `try { ... } catch (_e) {}` ou tout catch qui avale silencieusement.
+- Toute erreur capturée doit être loggée (`console.error`) ou re-throwée.
+- Pas de `catch (e) { /* silent */ }`, pas de `catch: pass` equivalent JS/TS.
+
+### Tests
+- Tout nouveau fichier de logique (`logic/`, `physics/`, `config/`) doit avoir un fichier de test Vitest associé (`*.test.ts`).
+- Les tests doivent passer : `npm run test` exit 0.
+- Pas de `it.skip` ou `test.skip` sans justification dans le commit.
+
+### Taille des fichiers
+- ❌ **Interdit** : fichier dépassant 250 lignes sans découpage proposé.
+- Si un fichier modifié dépasse 250 lignes après modification, proposer immédiatement un découpage en sous-modules.
+
 ## Anti-patterns d'ingénierie
 1. ❌ **Big bang refacto** : pas de feature flag, pas de coexistence. Remplace, nettoie, commit.
 2. ❌ **No stub / no TODO** : pas de `return null; // TODO`. Si commité, ça MARCHE.
