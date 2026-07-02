@@ -9,6 +9,58 @@
   padding: 40px;
 }
 
+@media (orientation: landscape) and (max-height: 500px) {
+  .page {
+    gap: 40px;
+    padding: 16px 24px;
+    align-items: center;
+  }
+
+  .title {
+    font-size: 32px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .nav {
+    gap: 8px;
+    width: 240px;
+  }
+
+  .primaryButton {
+    font-size: 15px;
+    padding: 10px 20px;
+  }
+
+  .rumbleButton {
+    font-size: 13px;
+    padding: 9px 20px;
+  }
+
+  .secondaryButton {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+
+  .right {
+    gap: 12px;
+    min-width: 200px;
+    max-width: 240px;
+  }
+
+  .leaderboardCard {
+    padding: 12px 14px;
+    gap: 6px;
+  }
+
+  .cardTitle {
+    font-size: 13px;
+  }
+}
+
 /* ── Left column ── */
 
 .left {

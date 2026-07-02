@@ -144,3 +144,40 @@
   border-color: rgba(255, 210, 80, 0.8);
   color: #ffd97a;
 }
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .panel {
+    min-width: unset;
+    padding: 18px 40px;
+  }
+
+  .title {
+    font-size: 26px;
+    margin-bottom: 14px;
+  }
+
+  .scoreRow {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .scoreRow span:last-child {
+    font-size: 15px;
+  }
+
+  .totalRow {
+    font-size: 14px;
+  }
+
+  .totalRow span:last-child {
+    font-size: 22px;
+  }
+
+  .divider {
+    margin: 8px 0;
+  }
+
+  .shotsLabel {
+    margin-bottom: 16px;
+  }
+}

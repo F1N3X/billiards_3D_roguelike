@@ -126,3 +126,28 @@
   opacity: 0.5;
   cursor: default;
 }
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .page {
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 16px 0;
+  }
+
+  .panel {
+    padding: 20px 36px;
+    width: 400px;
+  }
+
+  .backButton {
+    margin-bottom: 14px;
+  }
+
+  .tabs {
+    margin-bottom: 16px;
+  }
+
+  .form {
+    gap: 12px;
+  }
+}

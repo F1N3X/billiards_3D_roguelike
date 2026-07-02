@@ -430,11 +430,43 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       if (Math.hypot(e.clientX - mouseDownX, e.clientY - mouseDownY) < 6) fireShot()
     }
 
+    let touchStartX = 0, touchStartY = 0
+    const onTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      if (!touch) return
+      touchStartX = touch.clientX
+      touchStartY = touch.clientY
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      if (state.phase !== 'aiming') return
+      const cb = ballStates[0]
+      if (!cb.active) return
+      const touch = e.touches[0]
+      if (!touch) return
+      const rect = mount.getBoundingClientRect()
+      const ndcX =  ((touch.clientX - rect.left) / rect.width)  * 2 - 1
+      const ndcY = -((touch.clientY - rect.top)  / rect.height) * 2 + 1
+      raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera)
+      if (raycaster.ray.intersectPlane(tablePlane, intersection)) {
+        const dx = intersection.x - cb.mesh.position.x
+        const dz = intersection.z - cb.mesh.position.z
+        if (Math.hypot(dx, dz) > 0.01) state.aimAngle = Math.atan2(dz, dx)
+      }
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      const touch = e.changedTouches[0]
+      if (!touch) return
+      if (Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY) < 10) fireShot()
+    }
+
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     mount.addEventListener('mousemove', onMouseMove)
     mount.addEventListener('mousedown', onMouseDown)
     mount.addEventListener('mouseup', onMouseUp)
+    mount.addEventListener('touchstart', onTouchStart)
+    mount.addEventListener('touchmove', onTouchMove)
+    mount.addEventListener('touchend', onTouchEnd)
 
     const clock = new THREE.Clock()
 
@@ -716,6 +748,9 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
       mount.removeEventListener('mousemove', onMouseMove)
       mount.removeEventListener('mousedown', onMouseDown)
       mount.removeEventListener('mouseup', onMouseUp)
+      mount.removeEventListener('touchstart', onTouchStart)
+      mount.removeEventListener('touchmove', onTouchMove)
+      mount.removeEventListener('touchend', onTouchEnd)
       cleanupExtraCueBalls()
       for (const m of [...ghostBalls, ...ghostCues, ...ghostAimLines]) scene.remove(m)
       for (const m of lockOverlays) scene.remove(m)
@@ -734,5 +769,5 @@ export default function BilliardsScene({ onShotResolved, onRollingChange, active
     }
   }, [])
 
-  return <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />
+  return <div ref={mountRef} style={{ width: '100%', height: '100vh', touchAction: 'none' }} />
 }
