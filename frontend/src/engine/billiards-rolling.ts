@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import {
   TABLE_HEIGHT, TABLE_WIDTH, BALL_RADIUS,
   CURVE_FORCE, MAGNET_FORCE, MAGNET_RADIUS,
-  SEISME_IMPULSE_PER_SEC, MIN_SPEED,
+  SEISME_IMPULSE_PER_SEC, MIN_SPEED, MAX_SHOT_POWER,
 } from '../config/constants'
 import { positionCue, stepPhysics } from '../physics/step-physics'
 import type { BallState } from '../types/billiards'
@@ -130,7 +130,7 @@ export function handleRolling(
 
   if (state.shotAnim >= 0) {
     state.shotAnim = Math.min(state.shotAnim + dt / 0.12, 1)
-    positionCue(objects.cue, state.shotOrigin, state.aimAngle, state.shotAnim * 0.25)
+    positionCue(objects.cue, state.shotOrigin, state.aimAngle, state.shotAnim * 0.25, state.shotPower / MAX_SHOT_POWER)
     objects.cue.visible = state.shotAnim < 1
     if (state.shotAnim >= 1) state.shotAnim = -1
   } else {

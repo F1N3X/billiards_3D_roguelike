@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import {
   FRICTION, MIN_SPEED, MAX_BALL_SPEED, TABLE_WIDTH, TABLE_LENGTH, BALL_RADIUS,
-  POCKET_XZ, POCKET_RADIUS, CUE_TIP_GAP, CUE_LENGTH, PHYSICS_TARGET_FPS,
+  POCKET_XZ, POCKET_RADIUS, CUE_TIP_GAP, CUE_LENGTH, PHYSICS_TARGET_FPS, POWER_CUE_OFFSET, CUE_ELEVATION,
 } from '../config/constants'
 import type { BallState } from '../types/billiards'
 
@@ -73,14 +73,33 @@ export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOp
   }
 }
 
-export function positionCue(cue: THREE.Mesh, origin: THREE.Vector3, aimAngle: number, strokeOffset: number) {
-  const dist = CUE_TIP_GAP + CUE_LENGTH / 2 - strokeOffset
+// Scratch objects reused every frame — never allocate inside positionCue
+const _cueEuler = new THREE.Euler(0, 0, Math.PI / 2, 'XYZ')
+const _cueQ1 = new THREE.Quaternion()
+const _cueQ2 = new THREE.Quaternion()
+const _cueSideAxis = new THREE.Vector3()
+const _CUE_Y_LIFT = (CUE_LENGTH / 2) * Math.sin(CUE_ELEVATION)
+
+export function positionCue(
+  cue: THREE.Mesh,
+  origin: THREE.Vector3,
+  aimAngle: number,
+  strokeOffset: number,
+  powerFraction = 0,
+) {
+  const dist = CUE_TIP_GAP + CUE_LENGTH / 2 + powerFraction * POWER_CUE_OFFSET - strokeOffset
   cue.position.set(
-    origin.x - Math.cos(aimAngle) * dist,
-    origin.y,
-    origin.z - Math.sin(aimAngle) * dist,
+    origin.x + Math.cos(aimAngle) * dist,
+    origin.y + _CUE_Y_LIFT,
+    origin.z + Math.sin(aimAngle) * dist,
   )
-  cue.rotation.set(0, Math.PI - aimAngle, Math.PI / 2)
+  // Lay cylinder flat pointing toward ball
+  _cueEuler.y = -aimAngle
+  _cueQ1.setFromEuler(_cueEuler)
+  // Tilt butt upward around the aim-perpendicular horizontal axis
+  _cueSideAxis.set(-Math.sin(aimAngle), 0, Math.cos(aimAngle))
+  _cueQ2.setFromAxisAngle(_cueSideAxis, CUE_ELEVATION)
+  cue.quaternion.copy(_cueQ1).premultiply(_cueQ2)
 }
 
 export function updateAimLine(line: THREE.Line, from: THREE.Vector3, aimAngle: number) {

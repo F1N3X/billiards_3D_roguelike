@@ -101,7 +101,7 @@ Tout code produit ou modifié doit passer ces vérifications avant d'être consi
 
 ### Taille des fichiers
 - ❌ **Interdit** : fichier dépassant 250 lignes sans découpage proposé.
-- Si un fichier modifié dépasse 250 lignes après modification, proposer immédiatement un découpage en sous-modules.
+- Si un fichier dépasse 250 lignes après modification, proposer immédiatement un découpage en sous-modules.
 
 ## Anti-patterns d'ingénierie
 1. ❌ **Big bang refacto** : pas de feature flag, pas de coexistence. Remplace, nettoie, commit.
@@ -113,18 +113,19 @@ Tout code produit ou modifié doit passer ces vérifications avant d'être consi
 7. ❌ **No vibe-prompt** : prompt précis ou pas de prompt.
 
 ## Commandes utiles
-npm install
-npm run dev
-npm run build
-npm run test
-npm run lint
-npm run preview
+- `npm install`
+- `npm run dev`
+- `npm run build`
+- `npm run test`
+- `npm run lint`
+- `npm run preview`
 
-## ## Fichiers de référence
+## Fichiers de référence
 - `README.md` → présentation utilisateur du projet
 - `DECISIONS.md` → suivis des explications des raisons des ajouts des features
 - `memory/` → fichiers de mémoire et de contexte des différents apsects du projet
 - `scripts/` → fichiers de scripts déterministes
+- `.claude/skills/` → fichiers de skills à utiliser dans les cas concernés ou globaux
 
 
 ## Documentation

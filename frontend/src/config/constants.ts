@@ -9,7 +9,11 @@ export const POCKET_RADIUS = 0.13
 
 export const CUE_LENGTH = 2.5
 export const CUE_TIP_GAP = 0.05
-export const SHOT_POWER = 6.0
+export const MAX_SHOT_POWER = 8.0
+export const MIN_SHOT_POWER = 0.5
+export const MAX_AIM_DISTANCE = 1.5
+export const POWER_CUE_OFFSET = 0.35
+export const CUE_ELEVATION = 0.12
 export const FRICTION = 0.978
 export const MIN_SPEED = 0.025
 export const AIM_SPEED = 2.2

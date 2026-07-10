@@ -1,4 +1,4 @@
-import { SHOT_POWER, SEISME_DURATION } from '../config/constants'
+import { SEISME_DURATION } from '../config/constants'
 import { SPAWN_GAP, makeExtraCueBall, hideGhosts } from './billiards-engine-utils'
 import type { EngineObjects, EngineState, EngineCallbacks } from './billiards-engine-types'
 
@@ -11,8 +11,9 @@ export function fireShot(objects: EngineObjects, state: EngineState, callbacks: 
   state.explosionFiredBy.clear()
   state.explosionVisuals = []
 
-  const dx = Math.cos(state.aimAngle)
-  const dz = Math.sin(state.aimAngle)
+  const shotAngle = state.aimAngle + Math.PI
+  const dx = Math.cos(shotAngle)
+  const dz = Math.sin(shotAngle)
   const px = -dz
   const pz =  dx
   const effects = callbacks.activeEffects
@@ -37,8 +38,8 @@ export function fireShot(objects: EngineObjects, state: EngineState, callbacks: 
 
   if (effects.has('seisme')) state.seismeRemaining = SEISME_DURATION
 
-  cb.vx = dx * SHOT_POWER
-  cb.vz = dz * SHOT_POWER
+  cb.vx = dx * state.shotPower
+  cb.vz = dz * state.shotPower
   state.phase = 'rolling'
   state.shotAnim = 0
   callbacks.onRollingChange?.(true)
@@ -47,17 +48,17 @@ export function fireShot(objects: EngineObjects, state: EngineState, callbacks: 
   const originZ = cb.mesh.position.z
   for (let i = 1; i < mainSpawns.length; i++) {
     const { ox, oz, da } = mainSpawns[i]
-    const angle = state.aimAngle + da
+    const angle = shotAngle + da
     state.extraCueBalls.push(makeExtraCueBall(
       objects.scene, originX + ox, objects.CUE_Y, originZ + oz,
-      Math.cos(angle) * SHOT_POWER, Math.sin(angle) * SHOT_POWER,
+      Math.cos(angle) * state.shotPower, Math.sin(angle) * state.shotPower,
     ))
   }
 
   if (effects.has('clone') && state.cloneData) {
     for (let c = 0; c < state.cloneData.positions.length; c++) {
       const [cx, cz] = state.cloneData.positions[c]
-      const cAngle = state.aimAngle + state.cloneData.angles[c]
+      const cAngle = shotAngle + state.cloneData.angles[c]
       const cdx = Math.cos(cAngle)
       const cdz = Math.sin(cAngle)
       const cpx = -cdz
@@ -85,7 +86,7 @@ export function fireShot(objects: EngineObjects, state: EngineState, callbacks: 
         const angle = cAngle + da
         state.extraCueBalls.push(makeExtraCueBall(
           objects.scene, cx + ox, objects.CUE_Y, cz + oz,
-          Math.cos(angle) * SHOT_POWER, Math.sin(angle) * SHOT_POWER,
+          Math.cos(angle) * state.shotPower, Math.sin(angle) * state.shotPower,
         ))
       }
     }

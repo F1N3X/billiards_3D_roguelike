@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import {
   TABLE_WIDTH, TABLE_LENGTH, BALL_RADIUS, CUE_LENGTH,
   POCKET_XZ, POCKET_RADIUS,
-  SHOT_POWER, CURVE_FORCE, CURVE_PREVIEW_POINTS,
+  CURVE_FORCE, CURVE_PREVIEW_POINTS,
   CLONE_COUNT,
   EXPLOSION_RADIUS, EXPLOSION_FORCE,
   BOUNCY_WALLS_RESTITUTION, SLIPPERY_FRICTION, STICKY_FRICTION,
@@ -38,9 +38,9 @@ export function tryPlaceClone(
 
 export function buildCurveAimPositions(
   startX: number, startZ: number, y: number,
-  aimAngle: number, sign: number,
+  aimAngle: number, sign: number, shotPower: number,
 ): Float32Array {
-  const R = SHOT_POWER / CURVE_FORCE
+  const R = shotPower / CURVE_FORCE
   const arcSpan = Math.PI / 2
   const pts = new Float32Array(CURVE_PREVIEW_POINTS * 3)
   const cx = startX - Math.sin(aimAngle) * sign * R

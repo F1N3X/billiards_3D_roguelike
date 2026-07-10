@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { AIM_SPEED, CLONE_COUNT, EXPLOSION_RADIUS } from '../config/constants'
+import { AIM_SPEED, CLONE_COUNT, EXPLOSION_RADIUS, MAX_SHOT_POWER } from '../config/constants'
 import { positionCue, updateAimLine } from '../physics/step-physics'
 import { buildCurveAimPositions, buildCloneData } from './billiards-engine-utils'
 import type { EngineObjects, EngineState, EngineCallbacks } from './billiards-engine-types'
@@ -19,15 +19,17 @@ export function handleAiming(
     const curveEffect = callbacks.activeEffects.has('curveLeft') ? 'curveLeft'
       : callbacks.activeEffects.has('curveRight') ? 'curveRight'
       : null
+    const powerFraction = state.shotPower / MAX_SHOT_POWER
+    const shotAngle = state.aimAngle + Math.PI
     objects.cue.visible = true
-    positionCue(objects.cue, cb.mesh.position, state.aimAngle, 0)
+    positionCue(objects.cue, cb.mesh.position, state.aimAngle, 0, powerFraction)
     if (curveEffect) {
       objects.aimLine.visible = false
       objects.curveAimLine.visible = true
       const sign = curveEffect === 'curveLeft' ? 1 : -1
       const pts = buildCurveAimPositions(
         cb.mesh.position.x, cb.mesh.position.z, objects.CUE_Y + 0.002,
-        state.aimAngle, sign,
+        shotAngle, sign, state.shotPower,
       )
       const pos = objects.curveAimGeo.attributes.position as THREE.BufferAttribute
       pos.array.set(pts)
@@ -38,7 +40,7 @@ export function handleAiming(
       updateAimLine(
         objects.aimLine,
         new THREE.Vector3(cb.mesh.position.x, objects.CUE_Y + 0.002, cb.mesh.position.z),
-        state.aimAngle,
+        shotAngle,
       )
     }
   } else {
@@ -58,10 +60,11 @@ export function handleAiming(
     if (show && state.cloneData) {
       const [gx, gz] = state.cloneData.positions[i]
       const angle = state.aimAngle + state.cloneData.angles[i]
+      const powerFraction = state.shotPower / MAX_SHOT_POWER
       const ballPos = new THREE.Vector3(gx, objects.CUE_Y, gz)
       objects.ghostBalls[i].position.set(gx, objects.CUE_Y, gz)
-      positionCue(objects.ghostCues[i], ballPos, angle, 0)
-      updateAimLine(objects.ghostAimLines[i], new THREE.Vector3(gx, objects.CUE_Y + 0.002, gz), angle)
+      positionCue(objects.ghostCues[i], ballPos, angle, 0, powerFraction)
+      updateAimLine(objects.ghostAimLines[i], new THREE.Vector3(gx, objects.CUE_Y + 0.002, gz), angle + Math.PI)
     }
   }
 

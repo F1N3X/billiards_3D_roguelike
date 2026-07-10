@@ -45,6 +45,7 @@ export interface EngineObjects {
 export interface EngineState {
   phase: 'aiming' | 'rolling' | 'victory'
   aimAngle: number
+  shotPower: number
   shotAnim: number
   shotOrigin: THREE.Vector3
   activeBeforeShot: number

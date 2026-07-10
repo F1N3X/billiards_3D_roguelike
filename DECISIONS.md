@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-07-10 — Système de frappe : puissance dynamique + visée inversée
+
+**Décision :** La puissance du tir est désormais déterminée par la distance entre la souris et la boule blanche (plus la souris est éloignée, plus la frappe est puissante). La queue se positionne du côté de la souris (derrière la boule blanche, du point de vue du joueur). La direction de tir est opposée à la position de la souris — on vise derrière la boule pour indiquer la direction du coup.
+
+**Pourquoi :** L'ancienne mécanique de puissance fixe (`SHOT_POWER = 6.0`) ne donnait aucun contrôle tactique. Le placement de la queue derrière les boules de couleur était contre-intuitif ; positionner la souris derrière la boule blanche correspond à la gestuelle naturelle du billard réel.
+
+**Implémentation :**
+- `MAX_SHOT_POWER = 6.0`, `MIN_SHOT_POWER = 0.5`, `MAX_AIM_DISTANCE = 1.5` (unités table).
+- `POWER_CUE_OFFSET = 0.35` : la queue recule visuellement jusqu'à +0.35 unités à pleine puissance.
+- `aimAngle` toujours calculé comme l'angle vers la souris ; le tir se produit dans la direction `aimAngle + π`.
+- La ligne de visée et la queue reflètent la direction de tir réelle.
+
+**Alternatives rejetées :** Barre de puissance cliquable (UX moins immersive, rupture de flux).
+
+---
+
 ## 2026-06-30 — Séparation monorepo frontend / backend
 
 **Décision :** Le projet est organisé en monorepo avec deux sous-projets indépendants : `frontend/` et `backend/`.

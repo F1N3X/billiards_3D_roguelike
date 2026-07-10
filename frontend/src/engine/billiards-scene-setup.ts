@@ -4,7 +4,7 @@ import {
   TABLE_HEIGHT, BALL_RADIUS,
   CUE_COLOR,
   POCKET_XZ, POCKET_RADIUS,
-  CLONE_COUNT, CURVE_PREVIEW_POINTS, INITIAL_AIM_ANGLE,
+  CLONE_COUNT, CURVE_PREVIEW_POINTS, INITIAL_AIM_ANGLE, MIN_SHOT_POWER,
 } from '../config/constants'
 import { createRoom } from '../scene/create-room'
 import { createTable } from '../scene/create-table'
@@ -150,6 +150,7 @@ export function createEngineState(ballStates: BallState[]): EngineState {
   return {
     phase: 'aiming',
     aimAngle: INITIAL_AIM_ANGLE,
+    shotPower: MIN_SHOT_POWER,
     shotAnim: -1,
     shotOrigin: new THREE.Vector3(),
     activeBeforeShot: ballStates.slice(1).filter(b => b.active).length,

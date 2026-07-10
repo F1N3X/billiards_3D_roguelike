@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { MAX_SHOT_POWER, MIN_SHOT_POWER, MAX_AIM_DISTANCE } from '../config/constants'
 import { buildEngineObjects, createEngineState } from './billiards-scene-setup'
 import { fireShot } from './billiards-shot-handler'
 import { handleAiming, updateExplosionVisuals } from './billiards-aiming'
@@ -80,7 +81,12 @@ export class BilliardsEngine {
       if (this.raycaster.ray.intersectPlane(this.tablePlane, this.intersection)) {
         const dx = this.intersection.x - cb.mesh.position.x
         const dz = this.intersection.z - cb.mesh.position.z
-        if (Math.hypot(dx, dz) > 0.01) this.state.aimAngle = Math.atan2(dz, dx)
+        const mouseDist = Math.hypot(dx, dz)
+        if (mouseDist > 0.01) {
+          this.state.aimAngle = Math.atan2(dz, dx)
+          const t = Math.min(mouseDist / MAX_AIM_DISTANCE, 1)
+          this.state.shotPower = MIN_SHOT_POWER + t * (MAX_SHOT_POWER - MIN_SHOT_POWER)
+        }
       }
     }
     const onMouseDown = (e: MouseEvent) => {
@@ -114,7 +120,12 @@ export class BilliardsEngine {
       if (this.raycaster.ray.intersectPlane(this.tablePlane, this.intersection)) {
         const dx = this.intersection.x - cb.mesh.position.x
         const dz = this.intersection.z - cb.mesh.position.z
-        if (Math.hypot(dx, dz) > 0.01) this.state.aimAngle = Math.atan2(dz, dx)
+        const touchDist = Math.hypot(dx, dz)
+        if (touchDist > 0.01) {
+          this.state.aimAngle = Math.atan2(dz, dx)
+          const t = Math.min(touchDist / MAX_AIM_DISTANCE, 1)
+          this.state.shotPower = MIN_SHOT_POWER + t * (MAX_SHOT_POWER - MIN_SHOT_POWER)
+        }
       }
     }
     const onTouchEnd = (e: TouchEvent) => {
