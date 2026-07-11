@@ -1,7 +1,11 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { Db, ObjectId } from 'mongodb';
 import { MONGO_DB } from '../database/database.module';
-import { GameHistory, LeaderboardEntry, PlayerStats } from './game-history.interface';
+import {
+  GameHistory,
+  LeaderboardEntry,
+  PlayerStats,
+} from './game-history.interface';
 import { CreateGameHistoryDto } from './dto/create-game-history.dto';
 import { GameSessionsService } from '../game-sessions/game-sessions.service';
 
@@ -9,13 +13,23 @@ const COLLECTION = 'game_history';
 
 @Injectable()
 export class GameHistoryService {
+  private readonly logger = new Logger(GameHistoryService.name);
+
   constructor(
     @Inject(MONGO_DB) private readonly db: Db,
     private readonly gameSessionsService: GameSessionsService,
   ) {}
 
-  async create(dto: CreateGameHistoryDto, userId: string): Promise<GameHistory> {
+  async create(
+    dto: CreateGameHistoryDto,
+    userId: string,
+  ): Promise<GameHistory> {
     const gameMode = dto.gameMode ?? 'classic';
+
+    this.logger.log(
+      `[create] sessionId=${dto.sessionId} jwtUserId=${userId} bodyUserId=${dto.userId} gameMode=${gameMode} score=${dto.score} shots=${dto.shots}`,
+    );
+
     await this.gameSessionsService.consumeAndValidate(
       dto.sessionId,
       userId,
@@ -35,6 +49,10 @@ export class GameHistoryService {
     const result = await this.db
       .collection<GameHistory>(COLLECTION)
       .insertOne(entry);
+
+    this.logger.log(
+      `[create] inserted _id=${result.insertedId.toString()} into db="${this.db.databaseName}" collection="${COLLECTION}"`,
+    );
 
     return { ...entry, _id: result.insertedId };
   }
@@ -101,10 +119,16 @@ export class GameHistoryService {
       ])
       .toArray();
 
-    return entries.map((e, i) => ({ ...(e as Omit<LeaderboardEntry, 'rank'>), rank: i + 1 }));
+    return entries.map((e, i) => ({
+      ...(e as Omit<LeaderboardEntry, 'rank'>),
+      rank: i + 1,
+    }));
   }
 
-  async getPlayerStats(userId: string, gameMode: string): Promise<PlayerStats | null> {
+  async getPlayerStats(
+    userId: string,
+    gameMode: string,
+  ): Promise<PlayerStats | null> {
     const [result] = await this.db
       .collection<GameHistory>(COLLECTION)
       .aggregate([

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { GameSessionsService } from './game-sessions.service';
 import { StartGameSessionDto } from './dto/start-game-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';

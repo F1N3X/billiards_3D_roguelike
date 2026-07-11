@@ -26,7 +26,10 @@ const MAX_SCORE: Partial<Record<GameMode, number>> = {
 export class GameSessionsService {
   constructor(@Inject(MONGO_DB) private readonly db: Db) {}
 
-  async start(userId: string, dto: StartGameSessionDto): Promise<{ sessionId: string }> {
+  async start(
+    userId: string,
+    dto: StartGameSessionDto,
+  ): Promise<{ sessionId: string }> {
     const now = new Date();
     const session: GameSession = {
       userId: new ObjectId(userId),
@@ -36,7 +39,9 @@ export class GameSessionsService {
       used: false,
     };
 
-    const result = await this.db.collection<GameSession>(COLLECTION).insertOne(session);
+    const result = await this.db
+      .collection<GameSession>(COLLECTION)
+      .insertOne(session);
     return { sessionId: result.insertedId.toString() };
   }
 
@@ -84,7 +89,9 @@ export class GameSessionsService {
 
     const maxScore = MAX_SCORE[expectedGameMode];
     if (maxScore !== undefined && score > maxScore) {
-      throw new UnauthorizedException(`Score exceeds maximum allowed (${maxScore})`);
+      throw new UnauthorizedException(
+        `Score exceeds maximum allowed (${maxScore})`,
+      );
     }
 
     await this.db

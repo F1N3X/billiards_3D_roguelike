@@ -43,7 +43,10 @@ export class UsersService {
     };
 
     const result = await this.db.collection<User>(COLLECTION).insertOne(user);
-    const { passwordHash: _, ...safeUser } = { ...user, _id: result.insertedId };
+    const { passwordHash: _, ...safeUser } = {
+      ...user,
+      _id: result.insertedId,
+    };
     return safeUser;
   }
 
@@ -66,7 +69,10 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<Omit<User, 'passwordHash'>> {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+  ): Promise<Omit<User, 'passwordHash'>> {
     const patch: Partial<User> = { updatedAt: new Date() };
 
     if (dto.pseudo) patch.pseudo = dto.pseudo;
@@ -75,11 +81,13 @@ export class UsersService {
       patch.passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
     }
 
-    const result = await this.db.collection<User>(COLLECTION).findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: patch },
-      { returnDocument: 'after', projection: { passwordHash: 0 } },
-    );
+    const result = await this.db
+      .collection<User>(COLLECTION)
+      .findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: patch },
+        { returnDocument: 'after', projection: { passwordHash: 0 } },
+      );
 
     if (!result) {
       throw new NotFoundException(`User ${id} not found`);
@@ -87,7 +95,9 @@ export class UsersService {
     return result;
   }
 
-  async login(dto: LoginDto): Promise<{ user: Omit<User, 'passwordHash'>; token: string }> {
+  async login(
+    dto: LoginDto,
+  ): Promise<{ user: Omit<User, 'passwordHash'>; token: string }> {
     const user = await this.db
       .collection<User>(COLLECTION)
       .findOne({ email: dto.email });
@@ -103,7 +113,7 @@ export class UsersService {
 
     const { passwordHash: _, ...safeUser } = user;
     const token = this.jwtService.sign({
-      sub: safeUser._id!.toString(),
+      sub: safeUser._id.toString(),
       email: safeUser.email,
       pseudo: safeUser.pseudo,
     });
