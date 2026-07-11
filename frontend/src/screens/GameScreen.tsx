@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useState, useRef } from 'react'
+import { useReducer, useEffect, useState } from 'react'
 import { useAuth } from '../auth/use-auth'
 import { startGameSession, saveGameHistory, fetchLeaderboard, fetchPlayerStats } from '../api/api'
 import BilliardsScene from '../BilliardsScene'
@@ -15,7 +15,7 @@ export function GameScreen({ onMenu }: { onMenu: () => void }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [leaderboardLoading, setLeaderboardLoading] = useState(true)
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null)
-  const sessionIdRef = useRef<string | null>(null)
+  const [session, setSession] = useState<{ id: string; gameKey: number } | null>(null)
 
   const refreshLeaderboard = () => {
     setLeaderboardLoading(true)
@@ -41,29 +41,32 @@ export function GameScreen({ onMenu }: { onMenu: () => void }) {
 
   useEffect(() => {
     if (!user || !user.token) return
-    sessionIdRef.current = null
+    const gameKey = gameState.gameKey
     startGameSession('classic', user.token)
-      .then(({ sessionId }) => { sessionIdRef.current = sessionId })
+      .then(({ sessionId }) => setSession({ id: sessionId, gameKey }))
       .catch(err => console.error('[GameScreen] startGameSession', err))
   }, [user, gameState.gameKey])
 
   useEffect(() => {
-    if (!gameState.victory || !user || !user.token || !sessionIdRef.current) return
-
-    setSavedStatus('saving')
-    saveGameHistory(user._id, 'classic', gameState.victory.totalScore, gameState.victory.shots, user.token, sessionIdRef.current)
-      .then(() => {
+    if (!gameState.victory || !user || !user.token) return
+    if (!session || session.gameKey !== gameState.gameKey) return
+    const victory = gameState.victory
+    const currentSession = session
+    void (async () => {
+      setSavedStatus('saving')
+      try {
+        await saveGameHistory(user._id, 'classic', victory.totalScore, victory.shots, user.token, currentSession.id)
         setSavedStatus('saved')
         refreshLeaderboard()
         fetchPlayerStats(user._id, 'classic')
           .then(setPlayerStats)
           .catch(err => console.error('[GameScreen] fetchPlayerStats post-save', err))
-      })
-      .catch(err => {
+      } catch (err) {
         setSavedStatus('error')
         console.error('[GameScreen] saveGameHistory', err)
-      })
-  }, [gameState.victory, user])
+      }
+    })()
+  }, [gameState.victory, gameState.gameKey, user, session])
 
   const handleShotResolved = (ballsPotted: number, scratch: boolean, isVictory: boolean) => {
     dispatch({ type: 'shot_resolved', ballsPotted, scratch, isVictory })
