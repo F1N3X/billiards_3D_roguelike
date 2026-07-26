@@ -2,6 +2,12 @@ import { API_BASE_URL } from '../config/constants'
 import type { AuthUser } from '../types/user'
 import type { LeaderboardEntry, PlayerStats, GameMode } from '../types/game'
 
+let _onUnauthorized: (() => void) | null = null
+
+export function registerUnauthorizedHandler(handler: () => void): void {
+  _onUnauthorized = handler
+}
+
 async function request<T>(path: string, options?: RequestInit, token?: string): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token) {
@@ -12,6 +18,9 @@ async function request<T>(path: string, options?: RequestInit, token?: string): 
     ...options,
   })
   if (!res.ok) {
+    if (res.status === 401 && _onUnauthorized) {
+      _onUnauthorized()
+    }
     const body = await res.json().catch(() => ({})) as { message?: string }
     throw new Error(body.message ?? `HTTP ${res.status}`)
   }

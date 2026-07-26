@@ -1,7 +1,8 @@
-import { useState, useCallback, type ReactNode } from 'react'
+import { useState, useCallback, useEffect, type ReactNode } from 'react'
 import { AuthContext } from './auth-context-def'
 import type { AuthContextValue } from './auth-context-def'
 import type { AuthUser } from '../types/user'
+import { registerUnauthorizedHandler } from '../api/api'
 
 const STORAGE_KEY = 'billiards_user'
 
@@ -23,6 +24,7 @@ function loadUser(): AuthUser | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadUser)
+  const [sessionExpired, setSessionExpired] = useState(false)
 
   const signIn = useCallback((u: AuthUser) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(u))
@@ -39,7 +41,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u)
   }, [])
 
-  const value: AuthContextValue = { user, signIn, signOut, updateUser }
+  const dismissExpiry = useCallback(() => {
+    setSessionExpired(false)
+  }, [])
+
+  const handleUnauthorized = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY)
+    setUser(null)
+    setSessionExpired(true)
+  }, [])
+
+  useEffect(() => {
+    registerUnauthorizedHandler(handleUnauthorized)
+  }, [handleUnauthorized])
+
+  const value: AuthContextValue = { user, signIn, signOut, updateUser, sessionExpired, dismissExpiry }
 
   return (
     <AuthContext.Provider value={value}>
