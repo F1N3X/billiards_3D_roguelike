@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-07-30 — Fix leaderboard : `$limit` déplacé après `$lookup + $unwind`
+
+**Décision :** Dans l'agrégation leaderboard (`game-history.service.ts`), le `$limit: 10` est maintenant placé **après** le `$lookup + $unwind`. Aucun pré-filtre de limite n'est appliqué avant le lookup.
+
+**Pourquoi :** Le `$limit: 10` avant le lookup laissait des entrées orphelines (userIds de données de seeding supprimées, avec des scores extrêmes) occuper des slots du top 10, puis se faire éliminer par `$unwind`. Résultat : seulement 6 entrées réelles survivaient au lieu de 10. Un pré-filtre arbitraire (ex: 200) aurait juste repoussé le problème. Comme `gameMode` est indexé et que le volume de la collection reste petit, scanner toutes les entrées d'un mode avant le `$limit` final est négligeable.
+
+**Alternatives rejetées :** Nettoyage des données orphelines seul — insuffisant, car le bug structurel du pipeline resterait pour toute future suppression d'utilisateur. Pré-filtre à 200 — arbitraire et fragile.
+
+---
+
 ## 2026-07-10 — Système de frappe : puissance dynamique + visée inversée
 
 **Décision :** La puissance du tir est désormais déterminée par la distance entre la souris et la boule blanche (plus la souris est éloignée, plus la frappe est puissante). La queue se positionne du côté de la souris (derrière la boule blanche, du point de vue du joueur). La direction de tir est opposée à la position de la souris — on vise derrière la boule pour indiquer la direction du coup.

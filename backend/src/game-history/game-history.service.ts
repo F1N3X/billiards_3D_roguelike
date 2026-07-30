@@ -97,7 +97,6 @@ export class GameHistoryService {
           },
         },
         { $sort: { rankingScore: -1 } },
-        { $limit: 10 },
         {
           $lookup: {
             from: 'users',
@@ -107,6 +106,7 @@ export class GameHistoryService {
           },
         },
         { $unwind: '$user' },
+        { $limit: 10 },
         {
           $project: {
             _id: 0,
