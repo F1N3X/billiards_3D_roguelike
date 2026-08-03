@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-08-03 — Mode Rumble : verrouillage de bonus entre les tours
+
+**Décision :** Le joueur peut verrouiller un ou plusieurs bonus de sa main en mode Rumble. Un bonus verrouillé est conservé entre les tours (survit au `drawHandWithLocked`) mais ne peut pas être joué sur le tour où il est verrouillé. Déverrouiller un bonus le retourne dans le pool normal au prochain tirage.
+
+**Pourquoi :** Permet une stratégie à plus long terme — choisir de ne pas jouer un bonus ce tour pour le garantir au suivant. Donne de la profondeur sans complexifier l'économie (pas de coût supplémentaire en pièces : le coût est l'impossibilité de jouer ce tour).
+
+**Implémentation :**
+- `drawHandWithLocked(locked: PowerUp[])` dans `power-up-pool.ts` : conserve les verrouillés en tête, tire de nouveaux pour les slots restants en excluant leurs IDs.
+- `lockedPowerUps: PowerUp[]` et `lockedThisTurn: Set<PowerUpId>` dans `RumbleGameScreen` : deux états distincts — le premier persiste entre les tours, le second est réinitialisé à chaque `handleShotResolved`.
+- Activer un bonus verrouillé le déverrouillerait implicitement — protégé côté UI (bouton lock désactivé si la carte est active).
+- Verrouiller une carte active : la désactive automatiquement et rembourse les pièces.
+
+**Alternatives rejetées :** Coût en pièces pour verrouiller — aurait complexifié l'économie sans apport tactique clair. Verrouillage persistant illimité (tous tours) — idem, déjà couvert par le mécanisme actuel.
+
+---
+
 ## 2026-07-30 — Fix leaderboard : `$limit` déplacé après `$lookup + $unwind`
 
 **Décision :** Dans l'agrégation leaderboard (`game-history.service.ts`), le `$limit: 10` est maintenant placé **après** le `$lookup + $unwind`. Aucun pré-filtre de limite n'est appliqué avant le lookup.

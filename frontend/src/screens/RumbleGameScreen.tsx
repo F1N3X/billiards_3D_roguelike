@@ -6,7 +6,7 @@ import { GameDashboard } from '../ui/GameDashboard'
 import { VictoryScreen } from '../ui/VictoryScreen'
 import { RumbleHud } from '../ui/RumbleHud'
 import { reduce, initialGameState } from '../logic/game-reducer'
-import { drawHand } from '../logic/power-up-pool'
+import { drawHand, drawHandKeepingSlots } from '../logic/power-up-pool'
 import { RUMBLE_INITIAL_CURRENCY, RUMBLE_CURRENCY_PER_TURN, IS_DEV } from '../config/power-ups'
 import type { LeaderboardEntry, PlayerStats } from '../types/game'
 import type { PowerUp, BuffEffect } from '../game/powerups'
@@ -18,6 +18,8 @@ export function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
   const [currency, setCurrency] = useState(RUMBLE_INITIAL_CURRENCY)
   const [hand, setHand] = useState<PowerUp[]>(drawHand)
   const [activeEffects, setActiveEffects] = useState<Set<BuffEffect>>(new Set())
+  const [lockedIndices, setLockedIndices] = useState<Set<number>>(new Set())
+  const [lockedThisTurn, setLockedThisTurn] = useState<Set<number>>(new Set())
   const [isRolling, setIsRolling] = useState(false)
   const [savedStatus, setSavedStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -77,6 +79,8 @@ export function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
   }, [gameState.victory, gameState.gameKey, user, session])
 
   const toggleBonus = (powerUp: PowerUp) => {
+    const idx = hand.findIndex(p => p.id === powerUp.id)
+    if (lockedThisTurn.has(idx)) return
     const buff = powerUp.createBuff()
     if (activeEffects.has(buff.effect)) {
       if (!IS_DEV) setCurrency(c => c + powerUp.cost)
@@ -88,10 +92,37 @@ export function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
     setActiveEffects(prev => new Set([...prev, buff.effect]))
   }
 
+  const toggleLock = (powerUp: PowerUp) => {
+    const idx = hand.findIndex(p => p.id === powerUp.id)
+    if (idx === -1) return
+    if (lockedIndices.has(idx)) {
+      setLockedIndices(prev => { const next = new Set(prev); next.delete(idx); return next })
+      setLockedThisTurn(prev => { const next = new Set(prev); next.delete(idx); return next })
+    } else {
+      setLockedIndices(prev => new Set([...prev, idx]))
+      setLockedThisTurn(prev => new Set([...prev, idx]))
+      const buff = powerUp.createBuff()
+      if (activeEffects.has(buff.effect)) {
+        if (!IS_DEV) setCurrency(c => c + powerUp.cost)
+        setActiveEffects(prev => { const next = new Set(prev); next.delete(buff.effect); return next })
+      }
+    }
+  }
+
   const handleShotResolved = (ballsPotted: number, scratch: boolean, isVictory: boolean) => {
+    // Slots à conserver : verrouillés ET non joués ce tour
+    const slotsToKeep = new Set(
+      [...lockedIndices].filter(i => {
+        const p = hand[i]
+        return p !== undefined && !activeEffects.has(p.createBuff().effect)
+      }),
+    )
+    // Les cartes persistent en main, mais le verrou est consommé (slot libre au tour suivant)
+    setLockedIndices(new Set())
+    setLockedThisTurn(new Set())
     setActiveEffects(new Set())
     setCurrency(c => c + RUMBLE_CURRENCY_PER_TURN + ballsPotted)
-    setHand(drawHand())
+    setHand(drawHandKeepingSlots(hand, slotsToKeep))
     dispatch({ type: 'shot_resolved', ballsPotted, scratch, isVictory })
   }
 
@@ -99,6 +130,8 @@ export function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
     setSavedStatus('idle')
     setCurrency(RUMBLE_INITIAL_CURRENCY)
     setActiveEffects(new Set())
+    setLockedIndices(new Set())
+    setLockedThisTurn(new Set())
     setHand(drawHand())
     dispatch({ type: 'replay' })
     refreshLeaderboard()
@@ -130,9 +163,12 @@ export function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
         currency={currency}
         hand={hand}
         activeEffects={activeEffects}
+        lockedIndices={lockedIndices}
+        lockedThisTurn={lockedThisTurn}
         isRolling={isRolling}
         isDev={IS_DEV}
         onToggle={toggleBonus}
+        onLock={toggleLock}
       />
       {gameState.victory && (
         <VictoryScreen

@@ -64,8 +64,15 @@
 
 .hand {
   display: flex;
-  gap: 10px;
+  gap: 18px;
   pointer-events: all;
+}
+
+/* ── Card wrapper (card + lock button overlay) ── */
+
+.cardWrapper {
+  position: relative;
+  display: flex;
 }
 
 /* ── Card (active power-up) ── */
@@ -74,6 +81,7 @@
   position: relative;
   width: 130px;
   min-height: 90px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -167,6 +175,59 @@
   opacity: 0.38;
 }
 
+/* ── Locked-fresh state (verrouillé ce tour, non jouable) ── */
+
+.cardLockedFresh {
+  border-color: rgba(120, 180, 255, 0.5);
+  box-shadow: 0 0 10px rgba(120, 180, 255, 0.2);
+  opacity: 0.65;
+  cursor: default;
+}
+
+/* ── Lock button (overlay top-right) ── */
+
+.lockBtn {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  background: rgba(14, 10, 4, 0.92);
+  border: 1px solid rgba(255, 210, 80, 0.35);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  padding: 0;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lockBtn:hover:not(:disabled) {
+  border-color: rgba(255, 210, 80, 0.75);
+  background: rgba(30, 20, 4, 0.98);
+  box-shadow: 0 0 8px rgba(255, 210, 80, 0.3);
+}
+
+.lockBtn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.lockBtnActive {
+  border-color: rgba(120, 180, 255, 0.8);
+  background: rgba(20, 30, 60, 0.95);
+  box-shadow: 0 0 8px rgba(120, 180, 255, 0.4);
+}
+
+.lockBtnActive:hover:not(:disabled) {
+  border-color: rgba(120, 180, 255, 1);
+  background: rgba(30, 50, 90, 0.98);
+}
+
 /* ── Locked slot ── */
 
 .cardLocked {
@@ -231,6 +292,14 @@
     min-height: 62px;
     flex-shrink: 0;
     padding: 6px 8px 5px;
+  }
+
+  .lockBtn {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    top: -7px;
+    right: -7px;
   }
 
   .cardIcon {
