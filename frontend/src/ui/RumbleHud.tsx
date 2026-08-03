@@ -1,3 +1,4 @@
+import { Lock, LockOpen } from 'lucide-react'
 import type { PowerUp, BuffEffect } from '../game/powerups'
 import styles from './RumbleHud.module.css'
 
@@ -74,7 +75,7 @@ export function RumbleHud({
                 title={isLocked ? 'Déverrouiller' : 'Conserver pour le prochain tour'}
                 aria-label={isLocked ? `Déverrouiller ${powerUp.name}` : `Verrouiller ${powerUp.name}`}
               >
-                {isLocked ? '🔒' : '🔓'}
+                {isLocked ? <Lock size={13} strokeWidth={2.5} /> : <LockOpen size={13} strokeWidth={2.5} />}
               </button>
             </div>
           )

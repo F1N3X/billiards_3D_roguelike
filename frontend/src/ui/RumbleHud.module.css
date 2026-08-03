@@ -195,21 +195,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  line-height: 1;
+  color: rgba(255, 210, 80, 0.55);
   background: rgba(14, 10, 4, 0.92);
   border: 1px solid rgba(255, 210, 80, 0.35);
   border-radius: 50%;
   cursor: pointer;
   z-index: 2;
   padding: 0;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
 
 .lockBtn:hover:not(:disabled) {
   border-color: rgba(255, 210, 80, 0.75);
   background: rgba(30, 20, 4, 0.98);
   box-shadow: 0 0 8px rgba(255, 210, 80, 0.3);
+  color: rgba(255, 210, 80, 0.9);
 }
 
 .lockBtn:disabled {
@@ -221,11 +221,13 @@
   border-color: rgba(120, 180, 255, 0.8);
   background: rgba(20, 30, 60, 0.95);
   box-shadow: 0 0 8px rgba(120, 180, 255, 0.4);
+  color: rgba(120, 180, 255, 0.9);
 }
 
 .lockBtnActive:hover:not(:disabled) {
   border-color: rgba(120, 180, 255, 1);
   background: rgba(30, 50, 90, 0.98);
+  color: rgba(160, 210, 255, 1);
 }
 
 /* ── Locked slot ── */
