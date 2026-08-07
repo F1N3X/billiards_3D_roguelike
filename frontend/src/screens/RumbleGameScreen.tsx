@@ -7,7 +7,7 @@ import { VictoryScreen } from '../ui/VictoryScreen'
 import { RumbleHud } from '../ui/RumbleHud'
 import { reduce, initialGameState } from '../logic/game-reducer'
 import { drawHand, drawHandKeepingSlots } from '../logic/power-up-pool'
-import { RUMBLE_INITIAL_CURRENCY, RUMBLE_CURRENCY_PER_TURN, IS_DEV } from '../config/power-ups'
+import { RUMBLE_INITIAL_CURRENCY, RUMBLE_CURRENCY_PER_TURN, RUMBLE_REROLL_COST, IS_DEV } from '../config/power-ups'
 import type { LeaderboardEntry, PlayerStats } from '../types/game'
 import type { PowerUp, BuffEffect } from '../game/powerups'
 import styles from './screens.module.css'
@@ -109,6 +109,19 @@ export function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
     }
   }
 
+  const handleReroll = () => {
+    let refund = 0
+    for (let i = 0; i < hand.length; i++) {
+      if (!lockedIndices.has(i)) {
+        const buff = hand[i].createBuff()
+        if (activeEffects.has(buff.effect)) refund += hand[i].cost
+      }
+    }
+    setActiveEffects(new Set())
+    setHand(drawHandKeepingSlots(hand, lockedIndices))
+    if (!IS_DEV) setCurrency(c => c - RUMBLE_REROLL_COST + refund)
+  }
+
   const handleShotResolved = (ballsPotted: number, scratch: boolean, isVictory: boolean) => {
     // Slots à conserver : verrouillés ET non joués ce tour
     const slotsToKeep = new Set(
@@ -167,8 +180,10 @@ export function RumbleGameScreen({ onMenu }: { onMenu: () => void }) {
         lockedThisTurn={lockedThisTurn}
         isRolling={isRolling}
         isDev={IS_DEV}
+        rerollCost={RUMBLE_REROLL_COST}
         onToggle={toggleBonus}
         onLock={toggleLock}
+        onReroll={handleReroll}
       />
       {gameState.victory && (
         <VictoryScreen

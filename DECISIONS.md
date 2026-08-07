@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-08-07 — Mode Rumble : reroll de la main en échange de pièces
+
+**Décision :** En mode Rumble, un bouton "Relancer" permet de tirer une nouvelle main pour les slots non verrouillés, en échange de 3 pièces (`RUMBLE_REROLL_COST`). Les cartes verrouillées restent en place. Les effets actifs des cartes non verrouillées sont annulés et remboursés avant le retirage.
+
+**Pourquoi :** Donne un levier de contrôle supplémentaire quand la main tirée est inadaptée à la situation courante. À 3 pièces, le coût est significatif (≈ un bonus moyen) mais accessible dès le tour 2-3, ce qui le rend stratégique sans être trivial. Interdit pendant que les boules roulent pour éviter tout abus de timing.
+
+**Implémentation :**
+- `RUMBLE_REROLL_COST = 3` dans `config/power-ups.ts`.
+- `handleReroll` dans `RumbleGameScreen` : rembourse les effets actifs non verrouillés, vide `activeEffects`, appelle `drawHandKeepingSlots(hand, lockedIndices)`, déduit le coût.
+- Prop `onReroll` + `rerollCost` ajoutés à `RumbleHud`.
+- Bouton affiché dans une `topBar` côte-à-côte avec l'affichage de pièces, désactivé si fonds insuffisants ou boules en mouvement.
+
+**Alternatives rejetées :** Coût à 2 pièces — trop bon marché, le reroll deviendrait systématique. Coût à 5 pièces — trop rare, annule l'intérêt tactique. Reroll illimité dans un même tour — risquerait de rendre le verrou inutile (on reroll jusqu'à avoir exactement ce qu'on veut).
+
+---
+
 ## 2026-08-03 — Mode Rumble : verrouillage de bonus entre les tours
 
 **Décision :** Le joueur peut verrouiller un ou plusieurs bonus de sa main en mode Rumble. Un bonus verrouillé est conservé entre les tours (survit au `drawHandWithLocked`) mais ne peut pas être joué sur le tour où il est verrouillé. Déverrouiller un bonus le retourne dans le pool normal au prochain tirage.

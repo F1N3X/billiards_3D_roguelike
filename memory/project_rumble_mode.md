@@ -20,6 +20,13 @@ clone(6), triple_shot_triangle(5), triple_shot(4), explosive_shot(4), clone_on_c
 
 **Économie:** commence à 1 pièce, +1 par coup. Main de 4 slots tirée aléatoirement (Fisher-Yates) à chaque tour depuis le pool complet. Effets effacés après chaque coup.
 
+**Reroll de main (depuis 2026-08-07) :**
+- Bouton "Relancer" dans la `topBar` du HUD, à côté du compteur de pièces
+- Coût : `RUMBLE_REROLL_COST = 3` pièces (config/power-ups.ts)
+- Conserve les slots verrouillés (`lockedIndices`), tire de nouvelles cartes pour les autres via `drawHandKeepingSlots`
+- Rembourse les effets actifs des cartes non verrouillées avant le retirage
+- Désactivé si fonds insuffisants ou boules en mouvement
+
 **Verrouillage de bonus (depuis 2026-08-03) :**
 - Bouton cadenas sur chaque carte du HUD (🔓 / 🔒)
 - `lockedPowerUps: PowerUp[]` dans `RumbleGameScreen` — survit entre les tours

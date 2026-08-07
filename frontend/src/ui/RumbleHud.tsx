@@ -10,8 +10,10 @@ interface Props {
   lockedThisTurn: Set<number>
   isRolling: boolean
   isDev?: boolean
+  rerollCost: number
   onToggle: (powerUp: PowerUp) => void
   onLock: (powerUp: PowerUp) => void
+  onReroll: () => void
 }
 
 export function RumbleHud({
@@ -22,15 +24,43 @@ export function RumbleHud({
   lockedThisTurn,
   isRolling,
   isDev,
+  rerollCost,
   onToggle,
   onLock,
+  onReroll,
 }: Props) {
+  const canReroll = isDev || currency >= rerollCost
+  const lockedCount = lockedIndices.size
+
   return (
     <div className={styles.hud}>
-      <div className={styles.currency}>
-        <span className={styles.coinIcon}>◈</span>
-        <span className={styles.coinValue}>{isDev ? '∞' : currency}</span>
-        <span className={styles.coinLabel}>pièces</span>
+      <div className={styles.topBar}>
+        <div className={styles.currency}>
+          <span className={styles.coinIcon}>◈</span>
+          <span className={styles.coinValue}>{isDev ? '∞' : currency}</span>
+          <span className={styles.coinLabel}>pièces</span>
+        </div>
+        <button
+          className={[styles.rerollBtn, !canReroll || isRolling ? styles.rerollBtnDisabled : ''].join(' ')}
+          onClick={onReroll}
+          disabled={!canReroll || isRolling}
+          title={
+            isRolling
+              ? 'Impossible pendant que les boules roulent'
+              : !canReroll
+                ? `Pas assez de pièces (${rerollCost} ◈ requis)`
+                : lockedCount > 0
+                  ? `Relancer les ${hand.length - lockedCount} bonus non verrouillés`
+                  : 'Relancer tous les bonus'
+          }
+        >
+          <span className={styles.rerollIcon}>↺</span>
+          <span className={styles.rerollLabel}>Relancer</span>
+          <span className={styles.rerollCost}>
+            <span className={styles.coinSmall}>◈</span>
+            {rerollCost}
+          </span>
+        </button>
       </div>
       <div className={styles.hand}>
         {hand.map((powerUp, idx) => {

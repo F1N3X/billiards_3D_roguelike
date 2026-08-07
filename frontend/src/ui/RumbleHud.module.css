@@ -23,6 +23,15 @@
   margin-bottom: -4px;
 }
 
+/* ── Top bar (currency + reroll) ── */
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: all;
+}
+
 /* ── Currency ── */
 
 .currency {
@@ -58,6 +67,54 @@
   color: rgba(255, 210, 120, 0.55);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* ── Reroll button ── */
+
+.rerollBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(14, 10, 4, 0.88);
+  border: 1px solid rgba(255, 140, 60, 0.45);
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rerollBtn:hover:not(:disabled) {
+  border-color: rgba(255, 140, 60, 0.9);
+  box-shadow: 0 0 10px rgba(255, 140, 60, 0.35);
+}
+
+.rerollBtnDisabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.rerollIcon {
+  font-size: 16px;
+  color: rgba(255, 160, 80, 0.9);
+  line-height: 1;
+}
+
+.rerollLabel {
+  font-family: 'Georgia', serif;
+  font-size: 11px;
+  color: rgba(255, 160, 80, 0.75);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rerollCost {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  font-weight: bold;
+  color: rgba(255, 160, 80, 0.9);
 }
 
 /* ── Hand ── */
@@ -278,6 +335,18 @@
 
   .coinLabel {
     font-size: 9px;
+  }
+
+  .rerollBtn {
+    padding: 2px 8px;
+  }
+
+  .rerollLabel {
+    font-size: 9px;
+  }
+
+  .rerollIcon {
+    font-size: 13px;
   }
 
   .hand {
