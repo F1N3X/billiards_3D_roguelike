@@ -8,7 +8,7 @@ export function registerUnauthorizedHandler(handler: () => void): void {
   _onUnauthorized = handler
 }
 
-async function request<T>(path: string, options?: RequestInit, token?: string): Promise<T> {
+async function request<T>(path: string, options?: RequestInit, token?: string, skipUnauthorized = false): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
@@ -18,7 +18,7 @@ async function request<T>(path: string, options?: RequestInit, token?: string): 
     ...options,
   })
   if (!res.ok) {
-    if (res.status === 401 && _onUnauthorized) {
+    if (res.status === 401 && !skipUnauthorized && _onUnauthorized) {
       _onUnauthorized()
     }
     const body = await res.json().catch(() => ({})) as { message?: string }
@@ -38,7 +38,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   const data = await request<{ user: Omit<AuthUser, 'token'>; token: string }>('/users/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
-  })
+  }, undefined, true)
   return { ...data.user, token: data.token }
 }
 
@@ -46,7 +46,7 @@ export async function register(pseudo: string, email: string, password: string):
   await request<Omit<AuthUser, 'token'>>('/users', {
     method: 'POST',
     body: JSON.stringify({ pseudo, email, password }),
-  })
+  }, undefined, true)
   const logged = await login(email, password)
   return logged
 }
