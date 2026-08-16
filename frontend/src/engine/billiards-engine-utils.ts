@@ -63,13 +63,14 @@ export function buildLockedPocketIndices(effects: Set<BuffEffect>): Set<number> 
   return indices.size > 0 ? indices : undefined
 }
 
-export function buildStepPhysicsOpts(effects: Set<BuffEffect>) {
+export function buildStepPhysicsOpts(effects: Set<BuffEffect>, cueBalls?: BallState[]) {
   return {
     lockedPocketIndices: buildLockedPocketIndices(effects),
     wallRestitution: effects.has('bouncyWalls') ? BOUNCY_WALLS_RESTITUTION : undefined,
     frictionOverride: effects.has('slipperyFelt') ? SLIPPERY_FRICTION
       : effects.has('stickyFelt') ? STICKY_FRICTION
       : undefined,
+    giantBallRefs: effects.has('giantBall') && cueBalls ? new Set(cueBalls) : undefined,
   }
 }
 
@@ -101,12 +102,14 @@ export function makeExtraCueBall(
   scene: THREE.Scene,
   x: number, y: number, z: number,
   vx: number, vz: number,
+  ballScale = 1,
 ): BallState {
   const mesh = new THREE.Mesh(
     CUE_BALL_GEO,
     new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.15, metalness: 0.05 }),
   )
   mesh.position.set(x, y, z)
+  if (ballScale !== 1) mesh.scale.setScalar(ballScale)
   mesh.castShadow = true
   scene.add(mesh)
   return { mesh, vx, vz, active: true }

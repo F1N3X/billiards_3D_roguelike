@@ -85,4 +85,34 @@ describe('stepPhysics', () => {
     stepPhysics([ball], 0.016, { wallRestitution: 1.3 })
     expect(Math.abs(ball.vx)).toBeGreaterThan(5 * 0.74)
   })
+
+  it('giantBallRefs : boule géante non empochée', () => {
+    const [px, pz] = POCKET_XZ[0]
+    const giant = makeBall(px, pz, 0.1, 0.1)
+    stepPhysics([giant], 0.016, { giantBallRefs: new Set([giant]) })
+    expect(giant.active).toBe(true)
+  })
+
+  it('giantBallRefs : boule géante moins freinée qu\'une boule normale', () => {
+    const giant = makeBall(0, 0, 5, 0)
+    const normal = makeBall(0, 0, 5, 0)
+    stepPhysics([giant], 0.016, { giantBallRefs: new Set([giant]) })
+    stepPhysics([normal], 0.016)
+    expect(giant.vx).toBeGreaterThan(normal.vx)
+  })
+
+  it('giantBallRefs : collision géante→normale — la normale reçoit plus d\'impulsion', () => {
+    const giant = makeBall(0, 0, 3, 0)
+    const normal = makeBall(BALL_RADIUS * 1.5, 0, 0, 0)
+    stepPhysics([giant, normal], 0.016, { giantBallRefs: new Set([giant]) })
+    expect(normal.vx).toBeGreaterThan(3 * 0.9)
+  })
+
+  it('giantBallRefs : bille colorée reste empochable quand giant_ball est actif', () => {
+    const [px, pz] = POCKET_XZ[0]
+    const giant = makeBall(0, 0, 0, 0)
+    const colored = makeBall(px, pz, 0.1, 0.1)
+    stepPhysics([giant, colored], 0.016, { giantBallRefs: new Set([giant]) })
+    expect(colored.active).toBe(false)
+  })
 })

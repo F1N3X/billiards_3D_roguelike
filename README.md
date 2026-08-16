@@ -245,6 +245,7 @@ Mode roguelike où le joueur gagne **+1 pièce par coup** et peut acheter des po
 | Triangle | 5 | 3 blanches en triangle (1 en pointe, 2 en éventail) |
 | Triple Tir | 4 | 3 blanches en ligne dans l'axe du tir |
 | Tir Explosif | 4 | Explosion radiale au premier contact blanc→coloré |
+| Boule Géante | 4 | La boule blanche grossit ×2.5 : immunisée aux poches, masse élevée, inertie difficile à stopper |
 | Clonage au contact | 3 | Chaque boule touchée génère un clone coloré persistant |
 | Boule Magnétique | 3 | La(les) blanche(s) attirent les boules colorées proches |
 | Tir Courbé Gauche | 2 | Arc de cercle vers la gauche (preview orange) |

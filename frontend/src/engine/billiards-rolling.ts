@@ -3,6 +3,7 @@ import {
   TABLE_HEIGHT, TABLE_WIDTH, BALL_RADIUS,
   CURVE_FORCE, MAGNET_FORCE, MAGNET_RADIUS,
   SEISME_IMPULSE_PER_SEC, MIN_SPEED, MAX_SHOT_POWER,
+  GIANT_BALL_SCALE,
 } from '../config/constants'
 import { positionCue, stepPhysics } from '../physics/step-physics'
 import type { BallState } from '../types/billiards'
@@ -21,7 +22,18 @@ export function handleRolling(
   hideGhosts(objects)
 
   const effects = callbacks.activeEffects
-  const physicsOpts = buildStepPhysicsOpts(effects)
+  // Toutes les boules blanches (principale + clones) pour la physique géante
+  const allCueBalls = [objects.ballStates[0], ...state.extraCueBalls]
+  const physicsOpts = buildStepPhysicsOpts(effects, allCueBalls)
+
+  // Maintenir le visuel géant sur toutes les boules blanches pendant le rolling
+  if (effects.has('giantBall')) {
+    for (const cb of allCueBalls) {
+      if (!cb.active) continue
+      cb.mesh.scale.setScalar(GIANT_BALL_SCALE)
+      cb.mesh.position.y = objects.CUE_Y + BALL_RADIUS * (GIANT_BALL_SCALE - 1)
+    }
+  }
 
   if (effects.has('curveLeft') || effects.has('curveRight')) {
     const sign = effects.has('curveLeft') ? 1 : -1
@@ -45,7 +57,9 @@ export function handleRolling(
         const dx = white.mesh.position.x - colored.mesh.position.x
         const dz = white.mesh.position.z - colored.mesh.position.z
         const dist = Math.hypot(dx, dz)
-        if (dist >= BALL_RADIUS * 5 && dist < MAGNET_RADIUS && dist < nearestDist) {
+        const whiteR = physicsOpts.giantBallRefs?.has(white) ? BALL_RADIUS * GIANT_BALL_SCALE : BALL_RADIUS
+        const minMagnetDist = 2.5 * (whiteR + BALL_RADIUS)
+        if (dist >= minMagnetDist && dist < MAGNET_RADIUS && dist < nearestDist) {
           nearest = white
           nearestDist = dist
         }
@@ -72,16 +86,17 @@ export function handleRolling(
 
   if (effects.has('explosiveShot')) {
     const cueBalls = [objects.ballStates[0], ...state.extraCueBalls].filter(b => b.active)
-    const CONTACT_THRESHOLD = BALL_RADIUS * 2 * 1.15
     for (const cueBall of cueBalls) {
       if (state.explosionFiredBy.has(cueBall.mesh)) continue
+      const cueBallR = physicsOpts.giantBallRefs?.has(cueBall) ? BALL_RADIUS * GIANT_BALL_SCALE : BALL_RADIUS
+      const contactThreshold = (cueBallR + BALL_RADIUS) * 1.15
       for (const target of objects.ballStates.slice(1)) {
         if (!target.active) continue
         const dist = Math.hypot(
           target.mesh.position.x - cueBall.mesh.position.x,
           target.mesh.position.z - cueBall.mesh.position.z,
         )
-        if (dist < CONTACT_THRESHOLD) {
+        if (dist < contactThreshold) {
           const ecx = cueBall.mesh.position.x
           const ecz = cueBall.mesh.position.z
           applyExplosion([...objects.ballStates, ...state.extraCueBalls], ecx, ecz)
@@ -100,15 +115,16 @@ export function handleRolling(
 
   if (effects.has('cloneOnContact')) {
     const cueBalls = [objects.ballStates[0], ...state.extraCueBalls].filter(b => b.active)
-    const CONTACT_DIST = BALL_RADIUS * 2 * 1.15
     for (const cueBall of cueBalls) {
+      const cueBallR = physicsOpts.giantBallRefs?.has(cueBall) ? BALL_RADIUS * GIANT_BALL_SCALE : BALL_RADIUS
+      const contactDist = (cueBallR + BALL_RADIUS) * 1.15
       for (const target of objects.ballStates.slice(1)) {
         if (!target.active || state.clonedBallsThisShot.has(target.mesh)) continue
         const dist = Math.hypot(
           target.mesh.position.x - cueBall.mesh.position.x,
           target.mesh.position.z - cueBall.mesh.position.z,
         )
-        if (dist < CONTACT_DIST) {
+        if (dist < contactDist) {
           const pos = tryPlaceClone(objects.ballStates, [])
           if (pos) {
             const cloneMesh = new THREE.Mesh(
@@ -145,6 +161,13 @@ export function handleRolling(
 
   if (allStopped) {
     allBalls.forEach(b => { b.vx = 0; b.vz = 0 })
+
+    // Réinitialiser le visuel de toutes les boules blanches avant le prochain tour
+    for (const cball of allCueBalls) {
+      cball.mesh.scale.setScalar(1)
+      cball.mesh.position.y = objects.CUE_Y
+    }
+
     const coloredNow = objects.ballStates.slice(1).filter(b => b.active).length
     const ballsPotted = state.activeBeforeShot - coloredNow
 

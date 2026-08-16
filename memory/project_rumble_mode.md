@@ -15,8 +15,16 @@ Mode Rumble ajouté le 2026-07-01, enrichi le 2026-07-01, verrouillage de bonus 
 - `frontend/src/game/powerups/registry.ts` — `PowerUpRegistry.get(id)` / `PowerUpRegistry.all()`
 - `frontend/src/game/powerups/<nom>.test.ts` — test de coût, d'id et de createBuff pour chaque bonus
 
-**14 power-ups actifs (coût) :**
-clone(6), triple_shot_triangle(5), triple_shot(4), explosive_shot(4), clone_on_contact(3), magnetic_cue(3), curve_left(2), curve_right(2), lock_corner_pockets(2), seisme(2), bouncy_walls(2), lock_middle_pockets(1), slippery_felt(1), sticky_felt(1)
+**15 power-ups actifs (coût) :**
+clone(6), triple_shot_triangle(5), triple_shot(4), explosive_shot(4), giant_ball(4), clone_on_contact(3), magnetic_cue(3), curve_left(2), curve_right(2), lock_corner_pockets(2), seisme(2), bouncy_walls(2), lock_middle_pockets(1), slippery_felt(1), sticky_felt(1)
+
+**giant_ball (ajouté 2026-08-16) :**
+- Scale visuel boule blanche ×2.5 pendant le coup (aiming + rolling), Y ajusté pour rester sur la table
+- Immunité totale aux poches pour `balls[0]` dans `stepPhysics` (`giantCueBall: true` dans StepPhysicsOpts)
+- Physique masse inégale : masse ∝ rayon³ (ratio 15.6×), billes colorées reçoivent ~1.88× l'impulsion
+- Friction réduite : `GIANT_BALL_FRICTION = 0.990` vs `FRICTION = 0.978`, appliquée uniquement à `balls[0]`
+- Bounds mur ajustés pour le grand rayon (évite le clip à travers les bandes)
+- Reset automatique du visuel quand `allStopped` dans `billiards-rolling.ts`
 
 **Économie:** commence à 1 pièce, +1 par coup. Main de 4 slots tirée aléatoirement (Fisher-Yates) à chaque tour depuis le pool complet. Effets effacés après chaque coup.
 

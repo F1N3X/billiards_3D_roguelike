@@ -13,6 +13,7 @@ import { stickyFelt } from './sticky-felt'
 import { magneticCue } from './magnetic-cue'
 import { curveLeft } from './curve-left'
 import { curveRight } from './curve-right'
+import { giantBall } from './giant-ball'
 
 const REGISTRY = new Map<PowerUpId, PowerUp>([
   ['triple_shot', tripleShot],
@@ -29,6 +30,7 @@ const REGISTRY = new Map<PowerUpId, PowerUp>([
   ['magnetic_cue', magneticCue],
   ['curve_left', curveLeft],
   ['curve_right', curveRight],
+  ['giant_ball', giantBall],
 ])
 
 export const PowerUpRegistry = {

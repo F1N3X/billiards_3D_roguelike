@@ -1,5 +1,28 @@
 # Decisions
 
+## 2026-08-16 — Mode Rumble : power-up Boule Géante (`giant_ball`)
+
+**Décision :** Ajout d'un 15e power-up "Boule Géante" (coût 4 pièces) qui scale la boule blanche à 2.5× son rayon pendant toute la durée du coup.
+
+**Effets :**
+1. **Immunité aux poches** — `stepPhysics` saute le check de poche pour `balls[0]` lorsque `giantCueBall: true`. La boule blanche ne peut pas être empochée ni entraîner de scratch.
+2. **Physique à masse inégale** — la masse est proportionnelle au volume (rayon³). Ratio = 2.5³ ≈ 15.6×. Les formules de collision elastic two-body sont adaptées : la boule blanche perd à peine de vitesse, les billes colorées reçoivent ~1.88× l'impulsion normale.
+3. **Inertie plus forte** — friction réduite (`GIANT_BALL_FRICTION = 0.990` vs `FRICTION = 0.978`), appliquée uniquement à `balls[0]` dans la boucle de mouvement.
+4. **Bounds de mur ajustés** — maxX/maxZ recalculés avec le grand rayon pour éviter le clip visuel à travers les bandes.
+5. **Visuel** — mesh scalé + position Y ajustée (`CUE_Y + BALL_RADIUS * (SCALE - 1)`) pendant `handleAiming` et `handleRolling`. Reset automatique à `allStopped`.
+
+**Pourquoi :** Offre un gameplay asymétrique fort — le joueur ne peut pas se faire "poche blanche" accidentellement, mais doit viser les billes colorées avec une balle moins maniable (inertie élevée). Complémentaire aux effets de friction (slippery/sticky) et d'explosion.
+
+**Implémentation :**
+- `GIANT_BALL_SCALE = 2.5`, `GIANT_BALL_FRICTION = 0.990` dans `config/constants.ts`.
+- `StepPhysicsOpts.giantCueBall?: boolean` dans `step-physics.ts`.
+- `buildStepPhysicsOpts` passe `giantCueBall: true` quand l'effet est actif.
+- Visuel géré dans `billiards-aiming.ts` (frame par frame) et `billiards-rolling.ts` (frame + reset à `allStopped`).
+
+**Alternatives rejetées :** Verrouiller toutes les poches — empêcherait aussi d'empocher les billes colorées. Modifier `BallState` avec un champ `radius` — refactoring plus lourd, non justifié pour un seul effet.
+
+---
+
 ## 2026-08-07 — Mode Rumble : reroll de la main en échange de pièces
 
 **Décision :** En mode Rumble, un bouton "Relancer" permet de tirer une nouvelle main pour les slots non verrouillés, en échange de 3 pièces (`RUMBLE_REROLL_COST`). Les cartes verrouillées restent en place. Les effets actifs des cartes non verrouillées sont annulés et remboursés avant le retirage.

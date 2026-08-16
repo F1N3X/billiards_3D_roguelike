@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import {
   FRICTION, MIN_SPEED, MAX_BALL_SPEED, TABLE_WIDTH, TABLE_LENGTH, BALL_RADIUS,
   POCKET_XZ, POCKET_RADIUS, CUE_TIP_GAP, CUE_LENGTH, PHYSICS_TARGET_FPS, POWER_CUE_OFFSET, CUE_ELEVATION,
+  GIANT_BALL_SCALE, GIANT_BALL_FRICTION,
 } from '../config/constants'
 import type { BallState } from '../types/billiards'
 
@@ -9,6 +10,8 @@ export interface StepPhysicsOpts {
   lockedPocketIndices?: Set<number>
   wallRestitution?: number
   frictionOverride?: number
+  /** Toutes les boules blanches (principale + clones) concernées par l'effet géant */
+  giantBallRefs?: Set<BallState>
 }
 
 export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOpts) {
@@ -17,13 +20,22 @@ export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOp
   const wallRestitution = opts?.wallRestitution ?? 0.75
   const maxX = TABLE_WIDTH / 2 - BALL_RADIUS
   const maxZ = TABLE_LENGTH / 2 - BALL_RADIUS
-  const diam = BALL_RADIUS * 2
+
+  const giantRefs = opts?.giantBallRefs
+  const hasGiant = !!giantRefs && giantRefs.size > 0
+  const giantR = BALL_RADIUS * GIANT_BALL_SCALE
+  // masse ∝ rayon³ — le ratio détermine le partage d'impulsion lors des collisions
+  const giantMassRatio = GIANT_BALL_SCALE * GIANT_BALL_SCALE * GIANT_BALL_SCALE
+  // La géante prend le coefficient le plus glissant entre son propre et le tapis actif
+  const giantFrictionBase = Math.max(GIANT_BALL_FRICTION, frictionBase)
+  const giantFriction = Math.pow(giantFrictionBase, dt * PHYSICS_TARGET_FPS)
 
   for (const b of balls) {
     if (!b.active) continue
     if (Math.hypot(b.vx, b.vz) < MIN_SPEED) { b.vx = 0; b.vz = 0; continue }
-    b.vx *= friction
-    b.vz *= friction
+    const f = (hasGiant && giantRefs!.has(b)) ? giantFriction : friction
+    b.vx *= f
+    b.vz *= f
     b.mesh.position.x += b.vx * dt
     b.mesh.position.z += b.vz * dt
   }
@@ -32,25 +44,44 @@ export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOp
   for (let i = 0; i < active.length; i++) {
     for (let j = i + 1; j < active.length; j++) {
       const a = active[i], b = active[j]
+      const aIsGiant = hasGiant && giantRefs!.has(a)
+      const bIsGiant = hasGiant && giantRefs!.has(b)
+      const aR = aIsGiant ? giantR : BALL_RADIUS
+      const bR = bIsGiant ? giantR : BALL_RADIUS
+      const combinedDiam = aR + bR
       const dx = b.mesh.position.x - a.mesh.position.x
       const dz = b.mesh.position.z - a.mesh.position.z
       const d2 = dx * dx + dz * dz
-      if (d2 < diam * diam && d2 > 1e-6) {
+      if (d2 < combinedDiam * combinedDiam && d2 > 1e-6) {
         const d = Math.sqrt(d2)
         const nx = dx / d, nz = dz / d
         const imp = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz
         if (imp > 0) {
-          a.vx -= imp * nx; a.vz -= imp * nz
-          b.vx += imp * nx; b.vz += imp * nz
+          if (aIsGiant || bIsGiant) {
+            // Collision à masses inégales : géante = giantMassRatio * masse normale
+            const R = giantMassRatio
+            const fa = aIsGiant ? 2 / (R + 1) : 2 * R / (R + 1)
+            const fb = bIsGiant ? 2 / (R + 1) : 2 * R / (R + 1)
+            a.vx -= fa * imp * nx; a.vz -= fa * imp * nz
+            b.vx += fb * imp * nx; b.vz += fb * imp * nz
+          } else {
+            a.vx -= imp * nx; a.vz -= imp * nz
+            b.vx += imp * nx; b.vz += imp * nz
+          }
         }
-        const pen = (diam - d) / 2 + 0.0005
-        a.mesh.position.x -= pen * nx; a.mesh.position.z -= pen * nz
-        b.mesh.position.x += pen * nx; b.mesh.position.z += pen * nz
+        // Séparation proportionnelle aux rayons (la plus lourde bouge moins)
+        const penTotal = combinedDiam - d + 0.001
+        const penA = penTotal * bR / combinedDiam
+        const penB = penTotal * aR / combinedDiam
+        a.mesh.position.x -= penA * nx; a.mesh.position.z -= penA * nz
+        b.mesh.position.x += penB * nx; b.mesh.position.z += penB * nz
       }
     }
   }
 
   for (const b of active) {
+    // Les boules géantes sont immunisées contre les poches (trop grosses pour rentrer)
+    if (hasGiant && giantRefs!.has(b)) continue
     for (let i = 0; i < POCKET_XZ.length; i++) {
       if (opts?.lockedPocketIndices?.has(i)) continue
       const [px, pz] = POCKET_XZ[i]
@@ -64,10 +95,13 @@ export function stepPhysics(balls: BallState[], dt: number, opts?: StepPhysicsOp
 
   for (const b of balls) {
     if (!b.active) continue
-    if (b.mesh.position.x > maxX) { b.mesh.position.x = maxX; b.vx = -Math.abs(b.vx) * wallRestitution }
-    if (b.mesh.position.x < -maxX) { b.mesh.position.x = -maxX; b.vx = Math.abs(b.vx) * wallRestitution }
-    if (b.mesh.position.z > maxZ) { b.mesh.position.z = maxZ; b.vz = -Math.abs(b.vz) * wallRestitution }
-    if (b.mesh.position.z < -maxZ) { b.mesh.position.z = -maxZ; b.vz = Math.abs(b.vz) * wallRestitution }
+    const bIsGiant = hasGiant && giantRefs!.has(b)
+    const bMaxX = bIsGiant ? TABLE_WIDTH / 2 - giantR : maxX
+    const bMaxZ = bIsGiant ? TABLE_LENGTH / 2 - giantR : maxZ
+    if (b.mesh.position.x > bMaxX) { b.mesh.position.x = bMaxX; b.vx = -Math.abs(b.vx) * wallRestitution }
+    if (b.mesh.position.x < -bMaxX) { b.mesh.position.x = -bMaxX; b.vx = Math.abs(b.vx) * wallRestitution }
+    if (b.mesh.position.z > bMaxZ) { b.mesh.position.z = bMaxZ; b.vz = -Math.abs(b.vz) * wallRestitution }
+    if (b.mesh.position.z < -bMaxZ) { b.mesh.position.z = -bMaxZ; b.vz = Math.abs(b.vz) * wallRestitution }
     const spd = Math.hypot(b.vx, b.vz)
     if (spd > MAX_BALL_SPEED) { const f = MAX_BALL_SPEED / spd; b.vx *= f; b.vz *= f }
   }
@@ -102,11 +136,11 @@ export function positionCue(
   cue.quaternion.copy(_cueQ1).premultiply(_cueQ2)
 }
 
-export function updateAimLine(line: THREE.Line, from: THREE.Vector3, aimAngle: number) {
+export function updateAimLine(line: THREE.Line, from: THREE.Vector3, aimAngle: number, ballRadius = BALL_RADIUS) {
   const dx = Math.cos(aimAngle)
   const dz = Math.sin(aimAngle)
-  const maxX = TABLE_WIDTH / 2 - BALL_RADIUS
-  const maxZ = TABLE_LENGTH / 2 - BALL_RADIUS
+  const maxX = TABLE_WIDTH / 2 - ballRadius
+  const maxZ = TABLE_LENGTH / 2 - ballRadius
 
   let t = 20
   if (Math.abs(dx) > 1e-5) t = Math.min(t, ((dx > 0 ? maxX : -maxX) - from.x) / dx)

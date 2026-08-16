@@ -1,4 +1,4 @@
-import { SEISME_DURATION } from '../config/constants'
+import { SEISME_DURATION, BALL_RADIUS, GIANT_BALL_SCALE } from '../config/constants'
 import { SPAWN_GAP, makeExtraCueBall, hideGhosts } from './billiards-engine-utils'
 import type { EngineObjects, EngineState, EngineCallbacks } from './billiards-engine-types'
 
@@ -17,6 +17,11 @@ export function fireShot(objects: EngineObjects, state: EngineState, callbacks: 
   const px = -dz
   const pz =  dx
   const effects = callbacks.activeEffects
+
+  // Paramètres visuels/physiques pour les extra cue balls si giant_ball est actif
+  const isGiant = effects.has('giantBall')
+  const extraBallScale = isGiant ? GIANT_BALL_SCALE : 1
+  const extraBallY = isGiant ? objects.CUE_Y + BALL_RADIUS * (GIANT_BALL_SCALE - 1) : objects.CUE_Y
 
   let mainSpawns: Array<{ ox: number; oz: number; da: number }> = [{ ox: 0, oz: 0, da: 0 }]
 
@@ -50,8 +55,9 @@ export function fireShot(objects: EngineObjects, state: EngineState, callbacks: 
     const { ox, oz, da } = mainSpawns[i]
     const angle = shotAngle + da
     state.extraCueBalls.push(makeExtraCueBall(
-      objects.scene, originX + ox, objects.CUE_Y, originZ + oz,
+      objects.scene, originX + ox, extraBallY, originZ + oz,
       Math.cos(angle) * state.shotPower, Math.sin(angle) * state.shotPower,
+      extraBallScale,
     ))
   }
 
@@ -85,8 +91,9 @@ export function fireShot(objects: EngineObjects, state: EngineState, callbacks: 
       for (const { ox, oz, da } of cloneSpawns) {
         const angle = cAngle + da
         state.extraCueBalls.push(makeExtraCueBall(
-          objects.scene, cx + ox, objects.CUE_Y, cz + oz,
+          objects.scene, cx + ox, extraBallY, cz + oz,
           Math.cos(angle) * state.shotPower, Math.sin(angle) * state.shotPower,
+          extraBallScale,
         ))
       }
     }

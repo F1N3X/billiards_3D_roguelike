@@ -57,6 +57,9 @@ export const CURVE_PREVIEW_POINTS = 60
 export const MAGNET_FORCE = 4.0
 export const MAGNET_RADIUS = 1.2
 
+export const GIANT_BALL_SCALE = 2.5
+export const GIANT_BALL_FRICTION = 0.990
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 
 export const PHYSICS_TARGET_FPS = 60

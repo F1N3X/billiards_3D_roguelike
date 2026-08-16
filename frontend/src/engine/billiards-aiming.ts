@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { AIM_SPEED, CLONE_COUNT, EXPLOSION_RADIUS, MAX_SHOT_POWER } from '../config/constants'
+import { AIM_SPEED, CLONE_COUNT, EXPLOSION_RADIUS, MAX_SHOT_POWER, BALL_RADIUS, GIANT_BALL_SCALE } from '../config/constants'
 import { positionCue, updateAimLine } from '../physics/step-physics'
 import { buildCurveAimPositions, buildCloneData } from './billiards-engine-utils'
 import type { EngineObjects, EngineState, EngineCallbacks } from './billiards-engine-types'
@@ -15,6 +15,14 @@ export function handleAiming(
   if (keys.has('ArrowRight') || keys.has('d')) state.aimAngle += AIM_SPEED * dt
 
   const cb = objects.ballStates[0]
+
+  // Mise à l'échelle visuelle de la boule blanche selon l'effet actif
+  const isGiant = callbacks.activeEffects.has('giantBall')
+  if (cb.active) {
+    cb.mesh.scale.setScalar(isGiant ? GIANT_BALL_SCALE : 1)
+    cb.mesh.position.y = objects.CUE_Y + (isGiant ? BALL_RADIUS * (GIANT_BALL_SCALE - 1) : 0)
+  }
+
   if (cb.active) {
     const curveEffect = callbacks.activeEffects.has('curveLeft') ? 'curveLeft'
       : callbacks.activeEffects.has('curveRight') ? 'curveRight'
@@ -41,6 +49,7 @@ export function handleAiming(
         objects.aimLine,
         new THREE.Vector3(cb.mesh.position.x, objects.CUE_Y + 0.002, cb.mesh.position.z),
         shotAngle,
+        isGiant ? BALL_RADIUS * GIANT_BALL_SCALE : BALL_RADIUS,
       )
     }
   } else {
