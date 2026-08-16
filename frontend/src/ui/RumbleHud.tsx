@@ -29,8 +29,9 @@ export function RumbleHud({
   onLock,
   onReroll,
 }: Props) {
-  const canReroll = isDev || currency >= rerollCost
   const lockedCount = lockedIndices.size
+  const allLocked = lockedCount === hand.length && hand.length > 0
+  const canReroll = !allLocked && (isDev || currency >= rerollCost)
 
   return (
     <div className={styles.hud}>
@@ -47,11 +48,13 @@ export function RumbleHud({
           title={
             isRolling
               ? 'Impossible pendant que les boules roulent'
-              : !canReroll
-                ? `Pas assez de pièces (${rerollCost} ◈ requis)`
-                : lockedCount > 0
-                  ? `Relancer les ${hand.length - lockedCount} bonus non verrouillés`
-                  : 'Relancer tous les bonus'
+              : allLocked
+                ? 'Tous les bonus sont verrouillés'
+                : !canReroll
+                  ? `Pas assez de pièces (${rerollCost} ◈ requis)`
+                  : lockedCount > 0
+                    ? `Relancer les ${hand.length - lockedCount} bonus non verrouillés`
+                    : 'Relancer tous les bonus'
           }
         >
           <span className={styles.rerollIcon}>↺</span>
